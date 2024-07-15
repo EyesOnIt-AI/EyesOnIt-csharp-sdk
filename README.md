@@ -22,7 +22,7 @@ More details about the the SDK package are [here](https://www.nuget.org/packages
 // initialize the EyesOnIt SDK
 EyesOnIt eyesOnItSDK = new EyesOnIt("http://192.168.1.11:8000");
 
-// Define video stream to process
+// Define the video stream to process
 EOIAddStreamInputs addStreamInputs = new EOIAddStreamInputs()
 {
     StreamUrl = "rtsp://192.168.1.54/live0",                                // specify the stream RTSP URL
@@ -46,15 +46,19 @@ EOIAddStreamInputs addStreamInputs = new EOIAddStreamInputs()
     }
 };
 
-// Add stream to EyesOnIt
+// Add the stream to EyesOnIt
 EOIResponse response = await eyesOnItSDK.AddStream(addStreamInputs);        // add the stream and await the response
 
 if (response.Success)
 {
-    // Monitor stream
+    // Monitor the stream
     await eyesOnItSDK.MonitorStream(addStreamInputs.StreamUrl, null);       // AddStream succeeded. Monitor the stream.
 }
 ```
+
+## Demo
+
+The free interactive online demo is available [here](https://www.eyesonit.us/free-demo-sign-up).
 
 ## Questions
 
