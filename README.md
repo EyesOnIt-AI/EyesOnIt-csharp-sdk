@@ -1,59 +1,62 @@
-# Welcome to EyesOnIt
+# EyesOnIt - Large Vision Model for Advanced Computer Vision
 
-## Computer vision - simple but powerful
+**EyesOnIt** brings the power of Large Vision Models to computer programmers without computer vision or data science skills. This SDK allows EyesOnIt to be easily integrated with other products or projects.
 
-**EyesOnIt** makes advanced computer vision easy for anyone without data science or computer programming skills. Even without these skills, you can apply cutting edge computer vision to your video streams and start receiving alerts by text message in just a few minutes. If you have basic programming skills, you can quickly enable endless scenarios like these:
+## User Guide
 
-* Motion-based detection: trigger computer vision after motion is detected
-* Event recording: capture and store your own data about detections
-* Image categorization: categorize a collection of images according to the contents
+To get a free developer license and download EyesOnIt, refer to the EyesOnIt User Guide [here](https://www.eyesonit.us/userguide).
 
-## You describe it, we detect it
+## Adding the SDK Package
 
-Traditional computer vision involves a complex process to train and tune a computer vision model. This process typically requires weeks or months of time from experts with an advanced and specialized skillset. The cost for this process is often $50,000 to $100,000 USD or more. EyesOnIt is different. With EyesOnIt, you describe what you want to detect with English text. EyesOnIt compares your text to your image or video and tells you if it detected what you described. EyesOnIt does this by using the latest computer vision technology called Large Vision Models. You can download and try the full version of EyesOnIt for free with a developer license, and the production license cost is very affordable. You can also try our free demo for yourself [here](https://www.eyesonit.us/free-demo-sign-up).
+To add the SDK package to your project:
 
-## Let's get started
+```
+dotnet add package eyesonit.csharp.sdk --version 2.2.4
+```
 
-### Quick start
+More details about the the SDK package are [here](https://www.nuget.org/packages/eyesonit.csharp.sdk).
 
-#### 1. Create an account and get your free developer license
-Create an account or log in by clicking the Log In / Sign Up link above
+## Sample Code
 
-Go to the account page to get your license key and token
+```csharp
+// initialize the EyesOnIt SDK
+EyesOnIt eyesOnItSDK = new EyesOnIt("http://192.168.1.11:8000");
 
+// Define video stream to process
+EOIAddStreamInputs addStreamInputs = new EOIAddStreamInputs()
+{
+    StreamUrl = "rtsp://192.168.1.54/live0",                                // specify the stream RTSP URL
+    Name = "Street Camera",                                                 // provide a friendly name for the stream
+    Regions = new EOIRegion[]                                               // specify the area in the frame to process
+    {
+        new EOIRegion(435, 388, 600, 224)
+    },
+    ObjectDescriptions = new EOIObjectDescription[]                         // provide the descriptions of objects to detect
+    {
+        new EOIObjectDescription("vehicle", false) { Threshold = 90 },
+        new EOIObjectDescription("landscape", true)
+    },
+    ObjectSize = 250,                                                       // provide the estimated object size in pixels
+    Alerting = new EOIAlerting()                                            // provide the alerting settings
+    {
+        AlertSecondsCount = 0.4,
+        ResetSecondsCount = 2,
+        PhoneNumber = "+11234567890",
+        ImageNotification = true
+    }
+};
 
-#### 2. Install the software
-* Install Docker from [here](https://docs.docker.com/engine/install/)
-* Run Docker
-* Pull our Docker image
+// Add stream to EyesOnIt
+EOIResponse response = await eyesOnItSDK.AddStream(addStreamInputs);        // add the stream and await the response
 
-    ```
-    docker pull eyesonit/eyesonit_v2
-    ```
+if (response.Success)
+{
+    // Monitor stream
+    await eyesOnItSDK.MonitorStream(addStreamInputs.StreamUrl, null);       // AddStream succeeded. Monitor the stream.
+}
+```
 
-#### 3. Run the software
-* Create a container with your license key and token as parameters
+## Questions
 
-    ##### If you have an NVIDIA GPU
-    
-    Use this Docker run command to create your container with GPU support:
+Please email us at support@eyesonit.us if you have questions
 
-    ```
-    docker run -d -p 8000:8000 --gpus all -e EOI_LICENSE_KEY='<your license key>' -e EOI_AUTHORIZATION_TOKEN='<your license token>' -v <host-docker-volume-path>:/home/eyesonit_data eyesonit/eyesonit_v1:latest
-    ```
-
-    ##### If you don't have an NVIDIA GPU
-    
-    You can use your CPU for processing with this command:
-
-    ```
-    docker run -d -p 8000:8000 -e EOI_LICENSE_KEY='<your license key>' -e EOI_AUTHORIZATION_TOKEN='<your license token>' -v <host-docker-volume-path>:/home/eyesonit_data eyesonit/eyesonit_v1:latest
-    ```
-
-*Note*: If you are receiving your RTSP stream through a video management system, you may have to open another port on the container. You can do that by adding something like "-p 654:654" after "-p 8000:8000".
-
-* Open the test UI
-
-    On the same computer where you ran EyesOnIt, open a browser and navigate to http://localhost:8000/dashboard
-
-    You can find more information about the test UI [here](/docs/Trying%20EyesOnIt/index.md)
