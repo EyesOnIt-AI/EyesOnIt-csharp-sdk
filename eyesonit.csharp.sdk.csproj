@@ -1,0 +1,50 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <RootNamespace>EyesOnItSDK</RootNamespace>
+	<Version>2.2.4</Version>
+	<PackageReadmeFile>readme.md</PackageReadmeFile>
+	  <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+	  <Title>EyesOnIt C# SDK</Title>
+	  <Authors>eyesonit</Authors>
+	  <Company>EyesOnIt, Inc.</Company>
+	  <Product>EyesOnIt</Product>
+	  <Description>The C# SDK for EyesOnIt. EyesOnIt is a computer vision product based on a Large Vision Model. The EyesOnIt model was trained on 2 billion images. It detects thousands of types of objects and events based on natural language descriptions. Using this SDK, EyesOnIt can be easily integrated into existing products or projects by those without advanced computer vision or data science skills. EyesOnIt is container based software that can easily be deployed at the edge, on-premises or in cloud environments.</Description>
+	  <Copyright>Copyright 2024 by EyesOnIt</Copyright>
+	  <PackageProjectUrl>https://www.eyesonit.us</PackageProjectUrl>
+	  <PackageIcon>logo.png</PackageIcon>
+	  <RepositoryUrl>https://github.com/EyesOnIt-AI/EyesOnIt-csharp-sdk</RepositoryUrl>
+	  <RepositoryType>git</RepositoryType>
+	  <PackageTags>computer vision; large vision model; video security; video surveillance</PackageTags>
+	  <PackageReleaseNotes>Version 2.2.4 release - added input / output logging and method overrides to simplify use</PackageReleaseNotes>
+	  <ApplicationIcon>favicon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="favicon.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Serilog" Version="3.1.1" />
+    <PackageReference Include="Serilog.Enrichers.Environment" Version="2.3.0" />
+    <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
+    <PackageReference Include="Serilog.Enrichers.WithCaller" Version="1.2.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+	<None Include="readme.md" Pack="true" PackagePath="\" />
+	<None Include="LICENSE.txt" Pack="true" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
+</Project>
