@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <RootNamespace>EyesOnItSDK</RootNamespace>
-	<Version>2.2.4</Version>
+	<Version>2.2.5</Version>
 	<PackageReadmeFile>readme.md</PackageReadmeFile>
 	  <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 	  <Title>EyesOnIt C# SDK</Title>
@@ -17,7 +17,7 @@
 	  <RepositoryUrl>https://github.com/EyesOnIt-AI/EyesOnIt-csharp-sdk</RepositoryUrl>
 	  <RepositoryType>git</RepositoryType>
 	  <PackageTags>computer vision; large vision model; video security; video surveillance</PackageTags>
-	  <PackageReleaseNotes>Version 2.2.4 release - added input / output logging and method overrides to simplify use</PackageReleaseNotes>
+	  <PackageReleaseNotes>Version 2.2.5 release - updated readme</PackageReleaseNotes>
 	  <ApplicationIcon>favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -32,7 +32,7 @@
     <PackageReference Include="Serilog.Enrichers.WithCaller" Version="1.2.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="System.Text.Json" Version="8.0.4" />
-	<None Include="readme.md" Pack="true" PackagePath="\" />
+	<None Include="nuget\readme.md" Pack="true" PackagePath="\" />
 	<None Include="LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>
 
@@ -42,6 +42,10 @@
 
   <ItemGroup>
     <None Update="logo.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Update="nuget\readme.md">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
