@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <RootNamespace>EyesOnItSDK</RootNamespace>
-	<Version>2.2.5</Version>
+	<Version>2.2.6</Version>
 	<PackageReadmeFile>readme.md</PackageReadmeFile>
 	  <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 	  <Title>EyesOnIt C# SDK</Title>
@@ -16,8 +16,8 @@
 	  <PackageIcon>logo.png</PackageIcon>
 	  <RepositoryUrl>https://github.com/EyesOnIt-AI/EyesOnIt-csharp-sdk</RepositoryUrl>
 	  <RepositoryType>git</RepositoryType>
-	  <PackageTags>computer vision; large vision model; video security; video surveillance</PackageTags>
-	  <PackageReleaseNotes>Version 2.2.5 release - updated readme</PackageReleaseNotes>
+	  <PackageTags>computer-vision;large-vision-model;video-security;video-surveillance;artificial-intelligence</PackageTags>
+	  <PackageReleaseNotes>Version 2.2.6 release - updated tags</PackageReleaseNotes>
 	  <ApplicationIcon>favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
