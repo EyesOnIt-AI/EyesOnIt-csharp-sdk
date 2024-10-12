@@ -1,4 +1,5 @@
 ﻿using EyesOnItSDK.Data.Elements;
+using System;
 using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -13,29 +14,21 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonPropertyName("regions")]
-        public EOIRegion[] Regions { get; set; }
-
-        [JsonPropertyName("object_size")]
-        public int ObjectSize { get; set; }
-
-        [JsonPropertyName("prompts")]
-        public EOIObjectDescription[] ObjectDescriptions { get; set; }
-
-        [JsonPropertyName("alerting")]
-        public EOIAlerting Alerting { get; set; }
-
-        [JsonPropertyName("efficient_detection")]
-        public EOIMotionDetection MotionDetection { get; set; }
-
-        [JsonPropertyName("bounding_box")]
-        public EOIBoundingBox BoundingBox { get; set; }
-
         [JsonPropertyName("status")]
         public string Status { get; set; }
 
+        [JsonPropertyName("last_alert_time")]
+        public DateTime LastAlertTime { get; set; }
+
         [JsonPropertyName("frame_rate")]
         public int FrameRate { get; set; }
+
+        [JsonPropertyName("regions")]
+        public EOIRegion[] Regions { get; set; }
+
+        [JsonPropertyName("notification")]
+        public EOINotification Notification { get; set; }
+
 
         [JsonPropertyName("gpu_util")]
         public List<int> GpuUtil { get; set; }
@@ -44,7 +37,7 @@ namespace EyesOnItSDK.Data.Elements
         {
             get
             {
-                return Status == "MONITORING";
+                return Status == "MONITORING" || Status == "ALERTING";
             }
         }
 
@@ -52,7 +45,7 @@ namespace EyesOnItSDK.Data.Elements
         {
             get
             {
-                return Alerting != null && Alerting.Alerting != null && Alerting.Alerting == true;
+                return Status == "ALERTING";
             }
         }
 

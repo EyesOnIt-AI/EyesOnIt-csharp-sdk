@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using EyesOnItSDK.Data.Elements;
 using EyesOnItSDK.Data.Inputs;
 using System.Net;
+using EyesOnItSDK.Data.Outputs;
 
 namespace EyesOnItSDK
 {
@@ -23,8 +24,8 @@ namespace EyesOnItSDK
         private readonly string removeStreamPath = "/remove_stream";
         private readonly string monitorStreamPath = "/monitor_stream";
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
-        private readonly string getStreamsInfoPath = "/get_streams_info";
-        private readonly string getBoundingBoxObjectsPath = "/get_bounding_box_objects";
+        private readonly string getAllStreamsInfoPath = "/get_all_streams_info";
+        private readonly string getSupportedClassesPath = "/get_supported_classes";
         private readonly string getLastDetectionInfoPath = "/get_last_detection_info";
         private readonly string getPreviewVideoFramePath = "/get_preview_video_frame";
         private readonly string getVideoFramePath = "/get_video_frame";
@@ -40,28 +41,26 @@ namespace EyesOnItSDK
             return this.baseUrl;
         }
 
-        public async Task<EOIResponse> ProcessImageFromFile(string filePath, EOIRegion[] regions, int objectSize, EOIObjectDescription[] objectDescriptions)
+        public async Task<EOIProcessImageResponse> ProcessImageFromFile(string filePath, EOIRegion[] regions)
         {
             return await this.ProcessImageFromFile(
-                new EOIProcessImageInputs(null, regions, objectSize, objectDescriptions), 
+                new EOIProcessImageInputs(null, regions), 
                 filePath);
         }
 
-        public async Task<EOIResponse> ProcessImageFromFile(EOIProcessImageInputs inputs, string filePath)
+        public async Task<EOIProcessImageResponse> ProcessImageFromFile(EOIProcessImageInputs inputs, string filePath)
         {
-            EOIResponse eoiResponse = null;
+            EOIProcessImageResponse eoiProcessImageResponse = new EOIProcessImageResponse(EOIValidation.ValidateProcessImageInputs(inputs));
 
-            eoiResponse = EOIValidation.ValidateProcessImageInputs(inputs);
-
-            if (eoiResponse.Success)
+            if (eoiProcessImageResponse.Success)
             {
                 if (filePath == null || filePath.Length == 0)
                 {
-                    eoiResponse = new EOIResponse(false, $"filePath must not be null or empty.filePath = {filePath}");
+                    eoiProcessImageResponse = new EOIProcessImageResponse(false, $"filePath must not be null or empty.filePath = {filePath}");
                 }
             }
 
-            if (eoiResponse.Success && filePath != null)
+            if (eoiProcessImageResponse.Success && filePath != null)
             {
                 // Read the image file as a byte array
                 byte[] imageBytes = File.ReadAllBytes(filePath);
@@ -69,39 +68,26 @@ namespace EyesOnItSDK
                 // Convert the byte array to a Base64 encoded string
                 string base64String = Convert.ToBase64String(imageBytes);
 
-                EOIProcessImageInputs inputsWithImage = new EOIProcessImageInputs(base64String, inputs.Regions, inputs.ObjectSize, inputs.ObjectDescriptions);
+                EOIProcessImageInputs inputsWithImage = new EOIProcessImageInputs(base64String, inputs.Regions);
 
-                eoiResponse = await this.ProcessImage(inputsWithImage);
+                eoiProcessImageResponse = await this.ProcessImage(inputsWithImage);
             }
 
-            return eoiResponse;
+            return eoiProcessImageResponse;
         }
 
-        public async Task<EOIResponse> ProcessImage(
-                string base64Image,
-                EOIRegion[] regions,
-                int objectSize,
-                EOIObjectDescription[] objectDescriptions
-            )
+        public async Task<EOIProcessImageResponse> ProcessImage(string base64Image, EOIRegion[] regions)
         {
-            EOIProcessImageInputs inputs = new EOIProcessImageInputs(base64Image, regions, objectSize, objectDescriptions);
+            EOIProcessImageInputs inputs = new EOIProcessImageInputs(base64Image, regions);
 
             return await this.ProcessImage(inputs);
         }
 
-        public async Task<EOIResponse> ProcessImage(EOIProcessImageInputs inputs)
+        public async Task<EOIProcessImageResponse> ProcessImage(EOIProcessImageInputs inputs)
         {
-            EOIResponse eoiResponse = EOIValidation.ValidateProcessImageInputs(inputs);
+            EOIProcessImageResponse eoiProcessImageResponse = new EOIProcessImageResponse(EOIValidation.ValidateProcessImageInputs(inputs));
 
-            if (eoiResponse.Success)
-            {
-                if (inputs.Base64Image == null || inputs.Base64Image.Length == 0)
-                {
-                    eoiResponse = new EOIResponse(false, $"Base64Image must not be null or empty.filePath = {inputs.Base64Image}");
-                }
-            }
-
-            if (eoiResponse.Success && inputs.Base64Image != null)
+            if (eoiProcessImageResponse.Success)
             {
                 // set up request endpoint and body
                 string endPoint = $"{baseUrl}{processImagePath}";
@@ -115,107 +101,95 @@ namespace EyesOnItSDK
                         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                     };
 
-                    var jsonData = JsonSerializer.Serialize<EOIProcessImageInputs>(inputs, options);
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
 
-                    eoiResponse = await PostAsync(endPoint, jsonData);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    eoiProcessImageResponse = new EOIProcessImageResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"InferFromImage: Exception: {exc.Message}");
-                    eoiResponse = new EOIResponse(false, exc.Message);
+                    eoiProcessImageResponse = new EOIProcessImageResponse(false, exc.Message);
                 }
             }
 
-            return eoiResponse;
+            return eoiProcessImageResponse;
         }
 
-        public async Task<EOIResponse> GetStreamsInfo()
+        public async Task<EOIGetAllStreamsInfoResponse> GetAllStreamsInfo()
         {
-            EOIResponse eoiResponse;
+            EOIGetAllStreamsInfoResponse eoiGetAllStreamsInfoResponse;
 
-            string endPoint = $"{baseUrl}{getStreamsInfoPath}";
+            string endPoint = $"{baseUrl}{getAllStreamsInfoPath}";
 
             Log.Debug($"Calling {endPoint}");
 
             try
             {
-                eoiResponse = await GetAsync(endPoint);
-
-                if (eoiResponse.Success && eoiResponse.Data != null)
-                {
-                    Log.Debug($"GetStreamsInfo response: {eoiResponse.Data.ToString()}");
-
-                    eoiResponse.Data = EOIStreamInfo.FromJson(eoiResponse.Data.ToString());
-                }
+                EOIMessage eoiMessage = await GetAsync(endPoint);
+                eoiGetAllStreamsInfoResponse = new EOIGetAllStreamsInfoResponse(eoiMessage);
             }
             catch (HttpRequestException exc)
             {
                 Log.Error($"GetStreamsInfo: Exception: {exc.Message}");
-                eoiResponse = new EOIResponse(false, exc.Message);
+                eoiGetAllStreamsInfoResponse = new EOIGetAllStreamsInfoResponse(false, exc.Message);
             }
 
-            return eoiResponse;
+            return eoiGetAllStreamsInfoResponse;
         }
 
-        public async Task<EOIResponse> GetBoundingBoxObjects()
+        public async Task<EOIGetSupportedClassesResponse> GetSupportedClasses()
         {
-            EOIResponse eoiResponse;
+            EOIGetSupportedClassesResponse getSupportedClassesResponse;
 
-            string endPoint = $"{baseUrl}{getBoundingBoxObjectsPath}";
+            string endPoint = $"{baseUrl}{getSupportedClassesPath}";
 
             Log.Debug($"Calling {endPoint}");
 
             try
             {
-                eoiResponse = await GetAsync(endPoint);
-
-                if (eoiResponse.Success && eoiResponse.Data != null)
-                {
-                    Log.Debug($"GetBoundingBoxObjects response: {eoiResponse.Data}");
-
-                    EOIMessage eoiMessage = null;
-                    eoiMessage = EOIMessage.FromJson(eoiResponse.Data.ToString());
-
-                    if (eoiMessage != null)
-                    {
-                        eoiResponse.BoundingBoxObjects = eoiMessage.BoundingBoxObjects;
-                    }
-
-                    eoiResponse.Data = eoiResponse.Data.ToString();
-
-
-                }
+                EOIMessage eoiMessage = await GetAsync(endPoint);
+                getSupportedClassesResponse = new EOIGetSupportedClassesResponse(eoiMessage);
             }
             catch (HttpRequestException exc)
             {
-                Log.Error($"GetStreamsInfo: Exception: {exc.Message}");
-                eoiResponse = new EOIResponse(false, exc.Message);
+                Log.Error($"GetSupportedClasses: Exception: {exc.Message}");
+                getSupportedClassesResponse = new EOIGetSupportedClassesResponse(false, exc.Message);
             }
 
-            return eoiResponse;
+            return getSupportedClassesResponse;
         }
 
-        public async Task<EOIResponse> AddStream(
+        public async Task<EOIAddStreamResponse> AddStream(
             string streamUrl,
             string name,
             EOIRegion[] regions,
-            int objectSize,
-            EOIObjectDescription[] objectDescriptions,
-            EOIAlerting alerting,
-            EOIMotionDetection motionDetection = null,
-            EOIBoundingBox boundingBox = null,
-            int? frameRate = 5)
+            EOILine[] lines,
+            int? frameRate = 5,
+            EOINotification notification = null,
+            EOIRecording recording = null,
+            EOIEffects effects = null)
         {
-            EOIAddStreamInputs inputs = new EOIAddStreamInputs(streamUrl, name, regions, objectSize, objectDescriptions, alerting, motionDetection, boundingBox, frameRate);
+            EOIAddStreamInputs inputs = new EOIAddStreamInputs() 
+            {   
+                Name = name,
+                StreamUrl = streamUrl,
+                FrameRate = frameRate,
+                Regions = regions,
+                Lines = lines,
+                Notification = notification,
+                Recording = recording,
+                Effects = effects
+            };
 
-            return await this.AddStream(inputs);
+            return await AddStream(inputs);
         }
 
-        public async Task<EOIResponse> AddStream(EOIAddStreamInputs inputs)
+        public async Task<EOIAddStreamResponse> AddStream(EOIAddStreamInputs inputs)
         {
-            EOIResponse eoiResponse = EOIValidation.ValidateAddStreamInputs(inputs);
+            EOIAddStreamResponse addStreamResponse = new EOIAddStreamResponse(EOIValidation.ValidateAddStreamInputs(inputs));
 
-            if (eoiResponse.Success)
+            if (addStreamResponse.Success)
             {
                 string endPoint = $"{baseUrl}{addStreamPath}";
 
@@ -226,25 +200,26 @@ namespace EyesOnItSDK
                         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                     };
 
-                    var jsonData = JsonSerializer.Serialize<EOIAddStreamInputs>(inputs, options);
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
 
-                    eoiResponse = await PostAsync(endPoint, jsonData);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    addStreamResponse = new EOIAddStreamResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"AddStream: Exception: {exc.Message}");
-                    eoiResponse = new EOIResponse(false, exc.Message);
+                    addStreamResponse = new EOIAddStreamResponse(false, exc.Message);
                 }
             }
 
-            return eoiResponse;
+            return addStreamResponse;
         }
 
-        public async Task<EOIResponse> ProcessVideos(EOIProcessVideosInputs inputs)
+        public async Task<EOIProcessVideosResponse> ProcessVideos(EOIProcessVideosInputs inputs)
         {
-            EOIResponse eoiResponse = EOIValidation.ValidateProcessVideosInputs(inputs);
+            EOIProcessVideosResponse processVideosResponse = new EOIProcessVideosResponse(EOIValidation.ValidateProcessVideosInputs(inputs));
 
-            if (eoiResponse.Success)
+            if (processVideosResponse.Success)
             {
                 string endPoint = $"{baseUrl}{processVideosPath}";
 
@@ -255,34 +230,31 @@ namespace EyesOnItSDK
                         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                     };
 
-                    var jsonData = JsonSerializer.Serialize<EOIProcessVideosInputs>(inputs, options);
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
 
                     Log.Debug($"Calling {endPoint} with this JSON: {jsonData}");
 
-                    eoiResponse = await PostAsync(endPoint, jsonData);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    processVideosResponse = new EOIProcessVideosResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"ProcessVideo: Exception: {exc.Message}");
-                    eoiResponse = new EOIResponse(false, exc.Message);
+                    processVideosResponse = new EOIProcessVideosResponse(false, exc.Message);
                 }
             }
-            else
-            {
-                Log.Warning($"Validation of inputs failed. Message = {eoiResponse.Message}");
-            }
 
-            return eoiResponse;
+            return processVideosResponse;
         }
 
-        public async Task<EOIResponse> MonitorStream(string streamUrl, int? durationSeconds)
+        public async Task<EOIMonitorStreamResponse> MonitorStream(string streamUrl, int? durationSeconds)
         {
             return await this.MonitorStream(new EOIMonitorStreamInputs(streamUrl, durationSeconds));
         }
 
-        public async Task<EOIResponse> MonitorStream(EOIMonitorStreamInputs inputs)
+        public async Task<EOIMonitorStreamResponse> MonitorStream(EOIMonitorStreamInputs inputs)
         {
-            EOIResponse eoiResponse;
+            EOIMonitorStreamResponse eoiMonitorStreamResponse;
 
             string endPoint = $"{baseUrl}{monitorStreamPath}";
 
@@ -295,27 +267,28 @@ namespace EyesOnItSDK
                     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
                 };
 
-                var jsonData = JsonSerializer.Serialize<EOIMonitorStreamInputs>(inputs, options);
+                var jsonData = JsonSerializer.Serialize(inputs, options);
 
-                eoiResponse = await PostAsync(endPoint, jsonData);
+                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                eoiMonitorStreamResponse = new EOIMonitorStreamResponse(eoiMessage);
             }
             catch (HttpRequestException exc)
             {
                 Log.Error($"MonitorStream: Exception: {exc.Message}");
-                eoiResponse = new EOIResponse(false, exc.Message);
+                eoiMonitorStreamResponse = new EOIMonitorStreamResponse(false, exc.Message);
             }
 
-            return eoiResponse;
+            return eoiMonitorStreamResponse;
         }
 
-        public async Task<EOIResponse> StopMonitoringStream(string streamUrl)
+        public async Task<EOIStopMonitoringStreamResponse> StopMonitoringStream(string streamUrl)
         {
             return await this.StopMonitoringStream(new EOIStopMonitoringStreamInputs(streamUrl));
         }
 
-        public async Task<EOIResponse> StopMonitoringStream(EOIStopMonitoringStreamInputs inputs)
+        public async Task<EOIStopMonitoringStreamResponse> StopMonitoringStream(EOIStopMonitoringStreamInputs inputs)
         {
-            EOIResponse eoiResponse;
+            EOIStopMonitoringStreamResponse eoiStopMonitoringResponse;
 
             string endPoint = $"{baseUrl}{stopMonitorStreamPath}";
 
@@ -323,27 +296,28 @@ namespace EyesOnItSDK
 
             try
             {
-                var jsonData = JsonSerializer.Serialize<EOIStopMonitoringStreamInputs>(inputs);
+                var jsonData = JsonSerializer.Serialize(inputs);
 
-                eoiResponse = await PostAsync(endPoint, jsonData);
+                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                eoiStopMonitoringResponse = new EOIStopMonitoringStreamResponse(eoiMessage);
             }
             catch (HttpRequestException exc)
             {
                 Log.Error($"StopMonitoringStream: Exception: {exc.Message}");
-                eoiResponse = new EOIResponse(false, exc.Message);
+                eoiStopMonitoringResponse = new EOIStopMonitoringStreamResponse(false, exc.Message);
             }
 
-            return eoiResponse;
+            return eoiStopMonitoringResponse;
         }
 
-        public async Task<EOIResponse> GetPreviewVideoFrame(string streamUrl)
+        public async Task<EOIGetVideoFrameResponse> GetPreviewVideoFrame(string streamUrl)
         {
             return await this.GetPreviewVideoFrame(new EOIGetPreviewFrameInputs(streamUrl));
         }
 
-        public async Task<EOIResponse> GetPreviewVideoFrame(EOIGetPreviewFrameInputs inputs)
+        public async Task<EOIGetVideoFrameResponse> GetPreviewVideoFrame(EOIGetPreviewFrameInputs inputs)
         {
-            EOIResponse getPreviewFrameResponse = EOIValidation.ValidateStreamUrl(inputs.StreamUrl);
+            EOIGetVideoFrameResponse getPreviewFrameResponse = new EOIGetVideoFrameResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
 
             if (getPreviewFrameResponse.Success)
             {
@@ -352,28 +326,29 @@ namespace EyesOnItSDK
 
                 try
                 {
-                    var jsonData = JsonSerializer.Serialize<EOIGetPreviewFrameInputs>(inputs);
+                    var jsonData = JsonSerializer.Serialize(inputs);
 
-                    getPreviewFrameResponse = await PostAsync(endPoint, jsonData);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    getPreviewFrameResponse = new EOIGetVideoFrameResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"GetPreviewFrame: Exception: {exc.Message}");
-                    getPreviewFrameResponse = new EOIResponse(false, exc.Message);
+                    getPreviewFrameResponse = new EOIGetVideoFrameResponse(false, exc.Message);
                 }
             }
 
             return getPreviewFrameResponse;
         }
 
-        public async Task<EOIResponse> GetVideoFrame(string streamUrl)
+        public async Task<EOIGetVideoFrameResponse> GetVideoFrame(string streamUrl)
         {
             return await this.GetVideoFrame(new EOIGetVideoFrameInputs(streamUrl));
         }
 
-        public async Task<EOIResponse> GetVideoFrame(EOIGetVideoFrameInputs inputs)
+        public async Task<EOIGetVideoFrameResponse> GetVideoFrame(EOIGetVideoFrameInputs inputs)
         {
-            EOIResponse getVideoFrameResponse = EOIValidation.ValidateStreamUrl(inputs.StreamUrl);
+            EOIGetVideoFrameResponse getVideoFrameResponse = new EOIGetVideoFrameResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
 
             if (getVideoFrameResponse.Success)
             {
@@ -382,28 +357,29 @@ namespace EyesOnItSDK
 
                 try
                 {
-                    var jsonData = JsonSerializer.Serialize<EOIGetVideoFrameInputs>(inputs);
+                    var jsonData = JsonSerializer.Serialize(inputs);
 
-                    getVideoFrameResponse = await PostAsync(endPoint, jsonData);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    getVideoFrameResponse = new EOIGetVideoFrameResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"GetVideoFrame: Exception: {exc.Message}");
-                    getVideoFrameResponse = new EOIResponse(false, exc.Message);
+                    getVideoFrameResponse = new EOIGetVideoFrameResponse(false, exc.Message);
                 }
             }
 
             return getVideoFrameResponse;
         }
 
-        public async Task<EOIResponse> GetLastDetectionInfo(string streamUrl)
+        public async Task<EOIGetLastDetectionInfoResponse> GetLastDetectionInfo(string streamUrl)
         {
             return await this.GetLastDetectionInfo(new EOIGetLastDetectionInfoInputs(streamUrl));
         }
 
-        public async Task<EOIResponse> GetLastDetectionInfo(EOIGetLastDetectionInfoInputs inputs)
+        public async Task<EOIGetLastDetectionInfoResponse> GetLastDetectionInfo(EOIGetLastDetectionInfoInputs inputs)
         {
-            EOIResponse getLastDetectionInfoResponse = EOIValidation.ValidateStreamUrl(inputs.StreamUrl);
+            EOIGetLastDetectionInfoResponse getLastDetectionInfoResponse = new EOIGetLastDetectionInfoResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
 
             if (getLastDetectionInfoResponse.Success)
             {
@@ -412,33 +388,29 @@ namespace EyesOnItSDK
 
                 try
                 {
-                    var jsonData = JsonSerializer.Serialize<EOIGetLastDetectionInfoInputs>(inputs);
+                    var jsonData = JsonSerializer.Serialize(inputs);
 
-                    getLastDetectionInfoResponse = await PostAsync(endPoint, jsonData);
-
-                    if (getLastDetectionInfoResponse.Success && getLastDetectionInfoResponse.Data != null)
-                    {
-                        getLastDetectionInfoResponse.Data = EOILastDetection.FromJson(getLastDetectionInfoResponse.Data.ToString());
-                    }
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    getLastDetectionInfoResponse = new EOIGetLastDetectionInfoResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"GetLastDetectionInfo: Exception: {exc.Message}");
-                    getLastDetectionInfoResponse = new EOIResponse(false, exc.Message);
+                    getLastDetectionInfoResponse = new EOIGetLastDetectionInfoResponse(false, exc.Message);
                 }
             }
 
             return getLastDetectionInfoResponse;
         }
 
-        public async Task<EOIResponse> RemoveStream(string streamUrl)
+        public async Task<EOIRemoveStreamResponse> RemoveStream(string streamUrl)
         {
             return await this.RemoveStream(new EOIRemoveStreamInputs(streamUrl));
         }
 
-        public async Task<EOIResponse> RemoveStream(EOIRemoveStreamInputs inputs)
+        public async Task<EOIRemoveStreamResponse> RemoveStream(EOIRemoveStreamInputs inputs)
         {
-            EOIResponse removeStreamResponse = EOIValidation.ValidateStreamUrl(inputs.StreamUrl);
+            EOIRemoveStreamResponse removeStreamResponse = new EOIRemoveStreamResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
 
             if (removeStreamResponse.Success)
             {
@@ -447,24 +419,24 @@ namespace EyesOnItSDK
 
                 try
                 {
-                    var jsonData = JsonSerializer.Serialize<EOIRemoveStreamInputs>(inputs);
+                    var jsonData = JsonSerializer.Serialize(inputs);
 
-                    removeStreamResponse = await PostAsync(endPoint, jsonData);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    removeStreamResponse = new EOIRemoveStreamResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"RemoveStream: Exception: {exc.Message}");
-                    removeStreamResponse = new EOIResponse(false, exc.Message);
+                    removeStreamResponse = new EOIRemoveStreamResponse(false, exc.Message);
                 }
-
             }
 
             return removeStreamResponse;
         }
 
-        private async Task<EOIResponse> GetAsync(string endPoint)
+        private async Task<EOIMessage> GetAsync(string endPoint)
         {
-            EOIResponse eoiResponse;
+            EOIMessage eoiMessage;
             string responseContent = null;
 
             try
@@ -476,30 +448,27 @@ namespace EyesOnItSDK
 
                 Log.Debug($"{endPoint} response: {responseContent}");
 
-                eoiResponse = EOIResponse.DefaultSuccess();
-                eoiResponse.Data = responseContent;
+                eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
             }
             catch (HttpRequestException exc)
             {
                 string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
                 Log.Error($"GetAsync: HttpRequestException: {exc.Message} {innerExcMsg}");
-                eoiResponse = new EOIResponse(false, responseContent ?? $"{exc.Message} {innerExcMsg}");
+                eoiMessage = new EOIMessage(false, responseContent ?? $"{exc.Message} {innerExcMsg}");
             }
             catch (Exception exc)
             {
                 string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
                 Log.Error($"GetAsync: Generic Exception: {exc.Message} {innerExcMsg}");
-                eoiResponse = new EOIResponse(false, responseContent ?? $"{exc.Message} {innerExcMsg}");
+                eoiMessage = new EOIMessage(false, responseContent ?? $"{exc.Message} {innerExcMsg}");
             }
 
-            return eoiResponse;
+            return eoiMessage;
         }
 
-        private async Task<EOIResponse> PostAsync(string endpoint, string jsonString)
+        private async Task<EOIMessage> PostAsync(string endpoint, string jsonString)
         {
-            EOIResponse eoiResponse;
             EOIMessage eoiMessage = null;
-            string responseContent = null;
 
             try
             {
@@ -508,58 +477,30 @@ namespace EyesOnItSDK
                 var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
                 HttpResponseMessage httpResponse = await httpClient.PostAsync(endpoint, content);
-                responseContent = await httpResponse.Content.ReadAsStringAsync();
+                string responseContent = await httpResponse.Content.ReadAsStringAsync();
 
                 Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseContent}");
 
-                eoiMessage = EOIMessage.FromJson(responseContent);
+                eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
 
                 httpResponse.EnsureSuccessStatusCode();
-
-                eoiResponse = EOIResponse.DefaultSuccess();
             }
             catch (HttpRequestException exc)
             {
                 string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
                 Log.Error($"PostAsync: HttpRequestException: {exc.Message} {innerExcMsg}");
-                eoiResponse = EOIResponse.DefaultFailure();
 
-                if (eoiMessage == null)
-                {
-                    eoiMessage = new EOIMessage();
-                }
-
-                eoiMessage.Message = $"{exc.Message} {innerExcMsg}";
+                eoiMessage = new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
             }
             catch (Exception exc)
             {
                 string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
                 Log.Error($"PostAsync: Generic Exception: {exc.Message} {innerExcMsg}");
-                eoiResponse = EOIResponse.DefaultFailure();
 
-                if (eoiMessage == null)
-                {
-                    eoiMessage = new EOIMessage();
-                }
-
-                eoiMessage.Message = $"{exc.Message} {innerExcMsg}";
+                eoiMessage = new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
             }
 
-            if (eoiMessage != null)
-            {
-                eoiResponse.Message = eoiMessage.Message;
-                eoiResponse.Detail = eoiMessage.Detail;
-                eoiResponse.ConfidenceLevels = eoiMessage.JSON;
-                eoiResponse.Image = eoiMessage.Image;
-                eoiResponse.Data = eoiMessage.RawResponse;
-            }
-
-            if (eoiResponse != null && !eoiResponse.Success)
-            {
-                Log.Warning($"Failure calling EyesOnIt server: Message: {eoiResponse.Message}. Data: {eoiResponse.Data}");
-            }
-
-            return eoiResponse;
+            return eoiMessage;
         }
     }
 }

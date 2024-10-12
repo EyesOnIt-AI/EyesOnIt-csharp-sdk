@@ -13,48 +13,44 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonPropertyName("object_size")]
-        public int ObjectSize { get; set; }
-
-        [JsonPropertyName("alerting")]
-        public EOIAlerting Alerting { get; set; }
-
-        [JsonPropertyName("efficient_detection")]
-        public EOIMotionDetection MotionDetection { get; set; }
-
-        [JsonPropertyName("bounding_box")]
-        public EOIBoundingBox BoundingBox{ get; set; }
-
         [JsonPropertyName("frame_rate")]
         public int? FrameRate { get; set; }
 
+        [JsonPropertyName("lines")]
+        public EOILine[] Lines { get; set; }
+
+        [JsonPropertyName("notification")]
+        public EOINotification Notification { get; set; }
+
+        [JsonPropertyName("recording")]
+        public EOIRecording Recording { get; set; }
+
+        [JsonPropertyName("effects")]
+        public EOIEffects Effects { get; set; }
+        
 
         public EOIAddStreamInputs() : base()
         {
-            this.Alerting = new EOIAlerting();
-            this.MotionDetection = EOIMotionDetection.NoMotionDetection();
-            this.BoundingBox= new EOIBoundingBox();
-            this.StreamUrl = "";
+            this.FrameRate = 5;
         }
 
-        public EOIAddStreamInputs(
-            string streamUrl,
-            string name,
+        public EOIAddStreamInputs(string streamUrl, 
+            string name, 
+            int frameRate, 
             EOIRegion[] regions,
-            int objectSize,
-            EOIObjectDescription[] objectDescriptions,
-            EOIAlerting alerting,
-            EOIMotionDetection motionDetection = null,
-            EOIBoundingBox boundingBox = null,
-            int? frameRate = 5) : base(objectDescriptions, regions)
+            EOILine[] lines,
+            EOINotification notification, 
+            EOIRecording recording, 
+            EOIEffects effects) : base()
         {
             this.StreamUrl = streamUrl;
             this.Name = name;
-            this.ObjectSize = objectSize;
-            this.Alerting = alerting;
-            this.MotionDetection = motionDetection ?? EOIMotionDetection.NoMotionDetection();
-            this.BoundingBox = boundingBox ?? EOIBoundingBox.NoBoundingBox();
-            this.FrameRate = frameRate ?? 5;
+            this.FrameRate = frameRate;
+            this.Regions = regions;
+            this.Lines = lines;
+            this.Notification = notification;
+            this.Recording = recording;
+            this.Effects = effects;
         }
 
         public string ToJson()

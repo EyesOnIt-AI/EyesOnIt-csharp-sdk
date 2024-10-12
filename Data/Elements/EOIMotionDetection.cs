@@ -7,20 +7,17 @@ namespace EyesOnItSDK.Data.Elements
 {
     public class EOIMotionDetection
     {
-        [JsonPropertyName("periodic_check_enabled")]
-        public bool PeriodicCheckEnabled { get; set; }
+        [JsonPropertyName("enabled")]
+        public bool Enabled { get; set; }
 
-        [JsonPropertyName("periodic_check_seconds")]
-        public float PeriodicCheckSeconds { get; set; }
+        [JsonPropertyName("regular_check_frame_interval")]
+        public int RegularCheckFrameInterval { get; set; }
 
-        [JsonPropertyName("motion_detection_enabled")]
-        public bool MotionDetectionEnabled { get; set; }
+        [JsonPropertyName("backup_check_frame_interval")]
+        public float? BackupCheckFrameInterval { get; set; }
 
-        [JsonPropertyName("motion_detection_seconds")]
-        public float MotionDetectionSeconds { get; set; }
-
-        [JsonPropertyName("motion_detection_threshold")]
-        public int MotionDetectionThreshold { get; set; }
+        [JsonPropertyName("detection_threshold")]
+        public int DetectionThreshold { get; set; }
 
         public EOIMotionDetection()
         { 
@@ -30,11 +27,10 @@ namespace EyesOnItSDK.Data.Elements
         {
             return new EOIMotionDetection() 
             { 
-                PeriodicCheckEnabled = false, 
-                MotionDetectionEnabled = false, 
-                MotionDetectionSeconds = 1,
-                MotionDetectionThreshold = 100,
-                PeriodicCheckSeconds = 1 
+                Enabled = false,
+                RegularCheckFrameInterval = 1,
+                BackupCheckFrameInterval = null,
+                DetectionThreshold = 300 
             };
         }
     }

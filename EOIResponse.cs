@@ -12,11 +12,11 @@ namespace EyesOnItSDK
     {
         public bool Success { get; set; }
         public string Message { get; set; }
-        public string Detail { get; set; }
-        public object Data { get; set; }
-        public Dictionary<string, int> ConfidenceLevels { get; set; }
-        public string[] BoundingBoxObjects { get; set; }
-        public string Image { get; set; }
+        //public string Detail { get; set; }
+        //public object Data { get; set; }
+        //public Dictionary<string, int> ConfidenceLevels { get; set; }
+        //public string[] BoundingBoxObjects { get; set; }
+        //public string Image { get; set; }
 
         internal EOIResponse(bool success, string message)
         {

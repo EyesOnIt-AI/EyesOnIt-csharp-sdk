@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace EyesOnItSDK.Data.Elements
 {
-    public class EOIGenetecAlerting
+    public class EOIGenetecNotification
     {
         [JsonPropertyName("webhook_event_id")]
         public int? WebhookEventId { get; set; }
@@ -13,7 +13,7 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("webhook_camera_uuid")]
         public string WebhookCameraUUID { get; set; }
 
-        public EOIGenetecAlerting()
+        public EOIGenetecNotification()
         {
             this.WebhookEventId = null;
             this.WebhookCameraUUID = null;

@@ -10,22 +10,5 @@ namespace EyesOnItSDK.Data.Inputs
     {
         [JsonPropertyName("regions")]
         public EOIRegion[] Regions { get; set; }
-
-        [JsonPropertyName("prompts")]
-        public EOIObjectDescription[] ObjectDescriptions { get; set; }
-
-
-        public EOIBaseInputs()
-        {
-            this.Regions = new EOIRegion[] { };
-            this.ObjectDescriptions = new EOIObjectDescription[] { };
-        }
-
-        public EOIBaseInputs(EOIObjectDescription[] objectDescriptions, EOIRegion[] regions) 
-        {
-            this.Regions = regions;
-            this.ObjectDescriptions = objectDescriptions;
-        }
-
     }
 }

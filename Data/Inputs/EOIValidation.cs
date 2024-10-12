@@ -1,35 +1,43 @@
 ﻿using EyesOnItSDK.Data.Elements;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Security.Policy;
 
 namespace EyesOnItSDK.Data.Inputs
 {
     class EOIValidation
     {
+        private static int MIN_STREAM_NAME_LENGTH = 3;
+        private static int MIN_REGION_NAME_LENGTH = 3;
+        private static int MIN_PHONE_NUMBER_LENGTH = 10;
         private static int MAX_PHONE_NUMBER_LENGTH = 20;
         private static int MIN_PROMPT_LENGTH = 1;
         private static int MIN_PROMPT_THRESHOLD = 1;
         private static int MAX_PROMPT_THRESHOLD = 99;
         private static int MIN_FRAME_RATE = 1;
+        private static int MIN_LINE_VERTEX_COUNT = 2;
+        private static string[] VALID_CLASS_NAMES = { "person", "vehicle", "bag", "animal" };
+        private static string[] COUNT_CONDITION_TYPES = { "count_equals", "count_greater_than", "count_less_than" };
+        private static string[] LINE_CROSS_CONDITION_TYPES = { "line_cross" };
+        private static int MIN_LINE_NAME_LENGTH = 3;
+        private static int MIN_OBJECT_SIZE = 100;
+        private static float MIN_ALERT_SECONDS = 0.1F;
+        private static float MIN_RESET_SECONDS = 0.1F;
+        private static int MIN_CAMERA_UUID_LENGTH = 10;
+        private static int MIN_MOTION_THRESHOLD = 10;
 
-        private static EOIResponse ValidateBaseInputs(EOIBaseInputs inputs, bool validateThresholds)
+        public static EOIResponse ValidateProcessImageInputs(EOIProcessImageInputs inputs)
         {
-            EOIResponse response;
+            EOIResponse response = ValidateBaseInputs(inputs, null, false);
 
-            if (inputs == null)
+            if (response.Success && (inputs.Base64Image == null || inputs.Base64Image.Length == 0))
             {
-                response = new EOIResponse(false, "inputs = null. Request must include inputs");
-            }
-            else
-            {
-                response = ValidatePrompts(inputs.ObjectDescriptions, validateThresholds);
+                response = new EOIResponse(false, $"Base64Image must not be null or empty");
             }
 
             return response;
-        }
-
-        public static EOIResponse ValidateProcessImageInputs(EOIBaseInputs inputs)
-        {
-            return ValidateBaseInputs(inputs, false);
         }
 
         public static EOIResponse ValidateAddStreamInputs(EOIAddStreamInputs inputs)
@@ -42,21 +50,11 @@ namespace EyesOnItSDK.Data.Inputs
             }
             else
             {
-                response = ValidateBaseInputs(inputs, true);
+                response = ValidateLines(inputs.Lines);
 
                 if (response.Success)
                 {
-                    response = ValidateAlerting(inputs.Alerting);
-                }
-
-                if (response.Success)
-                {
-                    response = ValidateMotionDetection(inputs.MotionDetection);
-                }
-
-                if (response.Success)
-                {
-                    response = ValidateBoundingBox(inputs.BoundingBox);
+                    response = ValidateBaseInputs(inputs, inputs.Lines, true);
                 }
 
                 if (response.Success)
@@ -66,17 +64,22 @@ namespace EyesOnItSDK.Data.Inputs
 
                 if (response.Success)
                 {
-                    var nameTrimmed = inputs.Name == null ? null : inputs.Name.Trim();
+                    string name = inputs.Name == null ? "" : inputs.Name.Trim();
 
-                    if (nameTrimmed == null || nameTrimmed.Length == 0)
+                    if (name.Length < MIN_STREAM_NAME_LENGTH)
                     {
-                        response = new EOIResponse(false, $"the stream name must be specified. stream name = {nameTrimmed}");
+                        response = new EOIResponse(false, $"Stream name must be at least {MIN_STREAM_NAME_LENGTH} characters long. Stream name is {inputs.Name}");
                     }
                 }
 
-                if (response.Success && inputs.FrameRate < EOIValidation.MIN_FRAME_RATE)
+                if (response.Success)
                 {
-                    response = new EOIResponse(false, $"the minimum frame rate is {EOIValidation.MIN_FRAME_RATE}. frame rate = {inputs.FrameRate}");
+                    response = ValidateFrameRate(inputs.FrameRate);
+                }
+
+                if (response.Success)
+                {
+                    response = ValidateNotification(inputs.Notification);
                 }
             }
 
@@ -93,7 +96,7 @@ namespace EyesOnItSDK.Data.Inputs
             }
             else
             {
-                response = ValidateBaseInputs(inputs, true);
+                response = ValidateBaseInputs(inputs, inputs.Lines, true);
 
                 if (response.Success)
                 {
@@ -106,37 +109,120 @@ namespace EyesOnItSDK.Data.Inputs
                 //    response = ValidateOutputVideoFile(inputs.OutputVideoFile);
                 //}
 
-                if (response.Success)
+                if (response.Success && inputs.StartSeconds != null && inputs.StartSeconds < 0)
                 {
-                    response = ValidateAlerting(inputs.Alerting);
+                    response = new EOIResponse(false, $"If specified, StartSeconds must be at least 0. StartSeconds = {inputs.StartSeconds}");
+                }
+
+                if (response.Success && inputs.EndSeconds != null && inputs.EndSeconds < 1)
+                {
+                    response = new EOIResponse(false, $"If specified, EndSeconds must be at least 1. EndSeconds = {inputs.EndSeconds}");
+                }
+
+                if (response.Success && inputs.StartSeconds != null && inputs.EndSeconds != null && inputs.EndSeconds <= inputs.StartSeconds)
+                {
+                    response = new EOIResponse(false, $"If specified, EndSeconds must be greater than StartSeconds. StartSeconds = {inputs.StartSeconds}. EndSeconds = {inputs.EndSeconds}");
                 }
 
                 if (response.Success)
                 {
-                    response = ValidateMotionDetection(inputs.MotionDetection);
-                }
-
-                if (response.Success)
-                {
-                    response = ValidateBoundingBox(inputs.BoundingBox);
-                }
-
-                if (response.Success && inputs.FrameRate < EOIValidation.MIN_FRAME_RATE)
-                {
-                    response = new EOIResponse(false, $"the minimum frame rate is {EOIValidation.MIN_FRAME_RATE}. frame rate = {inputs.FrameRate}");
+                    response = ValidateFrameRate(inputs.FrameRate);
                 }
             }
 
             return response;
         }
 
-        public static EOIResponse ValidateStreamUrl(string streamUrl)
+        private static EOIResponse ValidateBaseInputs(EOIBaseInputs inputs, EOILine[] lines, bool validateForVideo)
         {
-            var trimmedUrl = streamUrl == null ? null : streamUrl.Trim();
+            EOIResponse response;
 
-            return trimmedUrl != null && trimmedUrl.Length > 0 ?
-                EOIResponse.DefaultSuccess()
-                : new EOIResponse(false, "The stream url must be a valid RTSP URL");
+            if (inputs == null)
+            {
+                response = new EOIResponse(false, "inputs = null. Request must include inputs");
+            }
+            else
+            {
+                response = ValidateRegions(inputs.Regions, lines, validateForVideo);
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateRegions(EOIRegion[] regions, EOILine[] lines, bool validateForVideo)
+        {
+            EOIResponse response = regions == null || regions.Length == 0 ?
+                new EOIResponse(false, "request must include one or more regions configurtion")
+                : EOIResponse.DefaultSuccess();
+
+            if (response.Success && regions != null)
+            {
+                foreach (var region in regions)
+                {
+                    if (response.Success)
+                    {
+                        string name = region.Name == null ? "" : region.Name.Trim();
+
+                        if (name.Length < MIN_REGION_NAME_LENGTH)
+                        {
+                            response = new EOIResponse(false, $"Region name must be at least {MIN_REGION_NAME_LENGTH} characters long. Region name is {region.Name}");
+                        }
+                    }
+
+                    if (response.Success)
+                    {
+                        response = ValidatePolygon(region.Polygon);
+                    }
+
+                    if (response.Success && validateForVideo)
+                    {
+                        response = ValidateMotionDetection(region.MotionDetection);
+                    }
+
+                    if (response.Success)
+                    {
+                        response = ValidateDetectionConfigs(region.DetectionConfigs, lines, validateForVideo);
+                    }
+
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidatePolygon(EOIVertex[] polygon)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (polygon == null || polygon.Length < 3)
+            {
+                response = new EOIResponse(false, "Polygon must contain at least 3 vertices");
+            }
+            else
+            {
+                response = ValidateVertexArray(polygon);
+            }
+
+            return response;
+        }
+
+        private static EOIResponse ValidateVertexArray(EOIVertex[] vertices)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            foreach (var vertex in vertices)
+            {
+                if (response.Success)
+                {
+                    if (vertex.X < 0 || vertex.Y < 0)
+                    {
+                        response = new EOIResponse(false, $"The vertex x and y values cannot be negative");
+                        break;
+                    }
+                }
+            }
+
+            return response;
         }
 
         public static EOIResponse ValidateMotionDetection(EOIMotionDetection motionDetection)
@@ -147,26 +233,19 @@ namespace EyesOnItSDK.Data.Inputs
 
             if (response.Success && motionDetection != null)
             {
-                if (!motionDetection.PeriodicCheckEnabled)
+                if (motionDetection.Enabled)
                 {
-                    if (motionDetection.MotionDetectionEnabled)
+                    if (motionDetection.DetectionThreshold < MIN_MOTION_THRESHOLD)
                     {
-                        response = new EOIResponse(false, "if MotionDetectionEnabled is true then PeriodicCheckEnabled must also be true");
+                        response = new EOIResponse(false, $"motion detection threshold should be at least {MIN_MOTION_THRESHOLD}. DetectionThreshold = {motionDetection.DetectionThreshold}");
                     }
-                }
-                else
-                {
-                    if (motionDetection.MotionDetectionThreshold < 1)
+                    else if (motionDetection.RegularCheckFrameInterval < 1)
                     {
-                        response = new EOIResponse(false, $"motion detection threshold should be at least 1. MotionDetectionThreshold = {motionDetection.MotionDetectionThreshold}");
+                        response = new EOIResponse(false, $"motion detection regular check interval should be at least 1. RegularCheckFrameInterval = {motionDetection.RegularCheckFrameInterval}");
                     }
-                    else if (motionDetection.MotionDetectionSeconds < 0)
+                    else if (motionDetection.BackupCheckFrameInterval < 1)
                     {
-                        response = new EOIResponse(false, $"motion detection seconds should be at least 0. MotionDetectionSeconds = {motionDetection.MotionDetectionSeconds}");
-                    }
-                    else if (motionDetection.PeriodicCheckSeconds < 0)
-                    {
-                        response = new EOIResponse(false, $"periodic check seconds should be at least 0. PeriodicCheckSeconds = {motionDetection.PeriodicCheckSeconds}");
+                        response = new EOIResponse(false, $"motion detection backup check interval should be at least 1. PeriodicCheckSeconds = {motionDetection.BackupCheckFrameInterval}");
                     }
                 }
             }
@@ -174,31 +253,58 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
-        public static EOIResponse ValidateBoundingBox(EOIBoundingBox boundingBox)
+        public static EOIResponse ValidateDetectionConfigs(EOIDetectionConfig[] detectionConfigs, EOILine[] lines, bool validateForVideo)
         {
-            EOIResponse response = boundingBox == null ?
-                new EOIResponse(false, "request must include BoundingBox configurtion")
+            EOIResponse response = detectionConfigs == null || detectionConfigs.Length == 0 ?
+                new EOIResponse(false, "request must include detection configurtions")
                 : EOIResponse.DefaultSuccess();
 
-            if (response.Success && boundingBox != null)
+            if (response.Success && detectionConfigs != null)
             {
-                if (boundingBox.BoundingBoxEnabled)
+                foreach (var detectionConfig in detectionConfigs)
                 {
-                    if (!boundingBox.DetectPeople && !boundingBox.DetectVehicles && !boundingBox.DetectBags)
+                    if (response.Success)
                     {
-                        response = new EOIResponse(false, "at least one object type must be specified for bounding box detection");
-                    }
-                    else if (boundingBox.PeopleConfidenceThreshold < 10 ||
-                        boundingBox.VehiclesConfidenceThreshold < 10 ||
-                        boundingBox.BagsConfidenceThreshold < 10)
-                    {
-                        response = new EOIResponse(false, "bounding box detection threshold must be at least 10");
-                    }
-                    else if (boundingBox.PeopleConfidenceThreshold > 100 ||
-                        boundingBox.VehiclesConfidenceThreshold > 100 ||
-                        boundingBox.BagsConfidenceThreshold > 100)
-                    {
-                        response = new EOIResponse(false, "bounding box detection threshold must not be greater than 100");
+                        if (detectionConfig.ClassName == null && detectionConfig.ObjectSize == null)
+                        {
+                            response = new EOIResponse(false, $"In detection configurations, either a class name or an object size must be specified");
+                        }
+                        else if (detectionConfig.ClassName != null && detectionConfig.ClassThreshold == null)
+                        {
+                            response = new EOIResponse(false, $"In detection configurations, if a class name is specified, a class threshold must also be specified.");
+                        }
+                        else if (detectionConfig.ClassName != null && !VALID_CLASS_NAMES.Contains(detectionConfig.ClassName.Trim()))
+                        {
+                            response = new EOIResponse(false, $"In detection configurations, class name is not valid. Class name is {detectionConfig.ClassName}");
+                        }
+                        else if (detectionConfig.ObjectSize != null && detectionConfig.ObjectSize < MIN_OBJECT_SIZE)
+                        {
+                            response = new EOIResponse(false, $"In detection configurations, the object size should be at least {MIN_OBJECT_SIZE}. ObjectSize = {detectionConfig.ObjectSize}");
+                        }
+                        else
+                        {
+                            response = ValidateObjectDescriptions(detectionConfig.ObjectDescriptions, validateForVideo);
+                        }
+
+                        if (response.Success && validateForVideo)
+                        {
+                            if (detectionConfig.AlertSeconds < MIN_ALERT_SECONDS)
+                            {
+                                Console.WriteLine($"AlertSeconds: {detectionConfig.AlertSeconds}, MIN_ALERT_SECONDS: {MIN_ALERT_SECONDS}");
+                                response = new EOIResponse(false, $"In detection configurations, alert seconds must be at least {MIN_ALERT_SECONDS}. AlertSeconds = {detectionConfig.AlertSeconds}");
+                            }
+                            else if (detectionConfig.ResetSeconds < MIN_RESET_SECONDS)
+                            {
+                                response = new EOIResponse(false, $"In detection configurations, reset seconds must be at least {MIN_RESET_SECONDS}. ResetSeconds = {detectionConfig.ResetSeconds}");
+                            }
+                            else
+                            {
+                                if (response.Success)
+                                {
+                                    response = ValidateConditions(detectionConfig.DetectionConditions, lines);
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -206,82 +312,162 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
-        public static EOIResponse ValidateInputVideoFiles(string[] inputVideoFiles)
-        {
-            EOIResponse response = inputVideoFiles == null || inputVideoFiles.Length == 0 ?
-                new EOIResponse(false, "request must include at least one input video file")
-                : EOIResponse.DefaultSuccess();
-
-            return response;
-        }
-
-        public static EOIResponse ValidateOutputVideoFile(string outputVideoFiles)
-        {
-            EOIResponse response = outputVideoFiles == null ?
-                new EOIResponse(false, "request must include an output video file")
-                : EOIResponse.DefaultSuccess();
-
-            return response;
-        }
-
-        public static EOIResponse ValidateAlerting(EOIAlerting alerting)
-        {
-            EOIResponse response = alerting == null ?
-                new EOIResponse(false, "request must include alerting configurtion")
-                : EOIResponse.DefaultSuccess();
-
-            if (response.Success && alerting != null)
-            {
-                if (alerting.AlertSecondsCount < 0.1 || alerting.AlertSecondsCount > 3600)
-                {
-                    response = new EOIResponse(false, $"alert_seconds_count must be between 0.1 and 3600.alert_seconds_count = ${alerting.AlertSecondsCount}");
-                }
-                else if (alerting.ResetSecondsCount < 0.1 || alerting.ResetSecondsCount > 3600)
-                {
-                    response = new EOIResponse(false, $"reset_seconds_count must be between 0.1 and 3600.reset_seconds_count = ${alerting.ResetSecondsCount}");
-                }
-                else if (alerting.PhoneNumber != null)
-                {
-                    response = EOIValidation.ValidatePhoneNumber(alerting.PhoneNumber);
-                }
-            }
-
-            return response;
-
-        }
-
-        private static EOIResponse ValidatePhoneNumber(string phoneNumber)
-        {
-            var trimmedPhoneNumber = phoneNumber == null ? null : phoneNumber.Trim();
-
-            EOIResponse response = trimmedPhoneNumber == null || trimmedPhoneNumber.Length == 0 ?
-                new EOIResponse(false, "The phone number cannot be null or empty")
-                : EOIResponse.DefaultSuccess();
-
-            if (response.Success && trimmedPhoneNumber != null)
-            {
-                if (trimmedPhoneNumber.Length > EOIValidation.MAX_PHONE_NUMBER_LENGTH)
-                {
-                    response = new EOIResponse(false, $"The phone number maximum length is {EOIValidation.MAX_PHONE_NUMBER_LENGTH}");
-                }
-                else if (!trimmedPhoneNumber.StartsWith("+"))
-                {
-                    response = new EOIResponse(false, "The phone number must start with a country code like + 1");
-                }
-                else
-                {
-                    response = EOIResponse.DefaultSuccess();
-                }
-            }
-
-            return response;
-
-        }
-
-        public static EOIResponse ValidatePrompts(EOIObjectDescription[] objectDescriptions, bool validateThresholds)
+        public static EOIResponse ValidateObjectDescriptions(EOIObjectDescription[] objectDescriptions, bool validateForVideo)
         {
             EOIResponse response = objectDescriptions == null || objectDescriptions.Length == 0 ?
                 new EOIResponse(false, $"request must include an array of object descriptions. objectDescriptions = {objectDescriptions}")
+                : EOIResponse.DefaultSuccess();
+
+            // validate each object description - minimum length, no duplicates, thresholds
+            if (response.Success && objectDescriptions != null)
+            {
+                var textSet = new HashSet<string>();
+
+                foreach (var objectDescription in objectDescriptions)
+                {
+                    if (response.Success)
+                    {
+                        var trimmedText = objectDescription.Text?.Trim();
+
+                        if (trimmedText == null || trimmedText.Length < EOIValidation.MIN_PROMPT_LENGTH)
+                        {
+                            response = new EOIResponse(false, $"Object description text must be at least {EOIValidation.MIN_PROMPT_LENGTH} character(s). Object description text = {trimmedText}");
+                        }
+                        else
+                        {
+                            if (textSet.Contains(trimmedText))
+                            {
+                                response = new EOIResponse(false, $"duplicate object description found: {trimmedText}");
+                            }
+                            else
+                            {
+                                textSet.Add(trimmedText);
+                            }
+                        }
+
+                        if (response.Success && validateForVideo)
+                        {
+                            if (objectDescription.Threshold < EOIValidation.MIN_PROMPT_THRESHOLD || objectDescription.Threshold > EOIValidation.MAX_PROMPT_THRESHOLD)
+                            {
+                                response = new EOIResponse(false, $"The object description alerting threshold must be between {EOIValidation.MIN_PROMPT_THRESHOLD} and {EOIValidation.MAX_PROMPT_THRESHOLD}. The value for object description '{objectDescription.Text}' is ${objectDescription.Threshold}");
+                            }
+                        }
+                    }
+                }
+
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateLines(EOILine[] lines)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (lines != null && lines.Length > 0)
+            {
+                var lineNameTextSet = new HashSet<string>();
+
+                foreach (var line in lines)
+                {
+                    if (response.Success)
+                    {
+                        var trimmedText = line.Name?.Trim().ToLower();
+
+                        if (trimmedText == null || trimmedText.Length < MIN_LINE_NAME_LENGTH)
+                        {
+                            response = new EOIResponse(false, $"Line names must be at least {MIN_LINE_NAME_LENGTH} characters. The line name {trimmedText} is not valid.");
+                        }
+                        else if (lineNameTextSet.Contains(trimmedText))
+                        {
+                            response = new EOIResponse(false, $"Duplicate line name found: {trimmedText}");
+                        }
+                        else
+                        {
+                            lineNameTextSet.Add(trimmedText);
+                        }
+
+                        if (response.Success)
+                        {
+                            if (line.Vertices == null || line.Vertices.Length < MIN_LINE_VERTEX_COUNT)
+                            {
+                                response = new EOIResponse(false, $"Each line must have at least {MIN_LINE_VERTEX_COUNT} vertices. The line with name {line.Name} has {line.Vertices.Length} vertices.");
+                            }
+
+                            if (response.Success)
+                            {
+                                response = ValidateVertexArray(line.Vertices);
+                            }
+                        }
+                    }
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateConditions(EOIDetectionCondition[] detectionConditions, EOILine[] lines)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+            
+            if (detectionConditions != null && detectionConditions.Length > 0)
+            {
+                var countConditionTextSet = new HashSet<string>();
+
+                foreach (var detectionCondition in detectionConditions)
+                {
+                    if (response.Success)
+                    {
+                        var trimmedText = detectionCondition.Type?.Trim().ToLower();
+
+                        if (COUNT_CONDITION_TYPES.Contains(trimmedText))
+                        {
+                            if (countConditionTextSet.Contains(trimmedText))
+                            {
+                                response = new EOIResponse(false, $"Duplicate detection condition found: {trimmedText}");
+                            }
+                            else
+                            {
+                                countConditionTextSet.Add(trimmedText);
+                            }
+
+                            if (response.Success)
+                            {
+                                if (detectionCondition.Count < 0)
+                                {
+                                    response = new EOIResponse(false, $"The detection condition count must be at least 0");
+                                }
+                            }
+                        }
+                        else if (LINE_CROSS_CONDITION_TYPES.Contains(trimmedText))
+                        {
+                            var lineNameSet = new HashSet<string>();
+
+                            if (lines != null)
+                            {
+                                foreach (var line in lines)
+                                {
+                                    lineNameSet.Add(line.Name);
+                                }
+                            }
+
+                            if (detectionCondition.LineName == null || !lineNameSet.Contains(detectionCondition.LineName))
+                            {
+                                response = new EOIResponse(false, $"The line_name for line_cross conditions must mach a line name defined in the lines array. The line name {detectionCondition.LineName} does not match any line names.");
+                            }
+                        }
+                    }
+                }
+            }
+
+            return response;
+        }
+
+        /*
+        public static EOIResponse ValidateRegions(EOIRegion[] regions, bool validateThresholds)
+        {
+            EOIResponse response = regions == null || regions.Length == 0 ?
+                new EOIResponse(false, $"request must include an array of regions. regions = {regions}")
                 : EOIResponse.DefaultSuccess();
 
             // validate each object description - minimum length, no duplicates, thresholds
@@ -325,35 +511,140 @@ namespace EyesOnItSDK.Data.Inputs
 
             return response;
         }
+        */
 
-        public static EOIResponse ValidateRegions(EOIRegion[] regions)
+        public static EOIResponse ValidateStreamUrl(string streamUrl)
         {
-            EOIResponse response = regions == null ?
-                new EOIResponse(false, "request must include regions configurtion")
+            var trimmedUrl = streamUrl == null ? null : streamUrl.Trim();
+
+            return trimmedUrl != null && trimmedUrl.Length > 0 ?
+                EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, "The stream url must be a valid RTSP URL");
+        }
+
+        public static EOIResponse ValidateFrameRate(int? frameRate)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (frameRate == null)
+            {
+                response = new EOIResponse(false, $"The frame rate must be provided");
+            }
+            else if (frameRate < MIN_FRAME_RATE)
+            {
+                response = new EOIResponse(false, $"The frame rate must be at least {MIN_FRAME_RATE}. FrameRate = {frameRate}");
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateInputVideoFiles(string[] inputVideoFiles)
+        {
+            EOIResponse response = inputVideoFiles == null || inputVideoFiles.Length == 0 ?
+                new EOIResponse(false, "request must include at least one input video file")
                 : EOIResponse.DefaultSuccess();
 
-            if (response.Success && regions != null)
+            return response;
+        }
+
+        public static EOIResponse ValidateOutputVideoFile(string outputVideoFiles)
+        {
+            EOIResponse response = outputVideoFiles == null ?
+                new EOIResponse(false, "request must include an output video file")
+                : EOIResponse.DefaultSuccess();
+
+            return response;
+        }
+
+        public static EOIResponse ValidateNotification(EOINotification notification)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (notification != null)
             {
-                foreach (var region in regions)
+                response = EOIValidation.ValidatePhoneNumber(notification.PhoneNumber);
+
+                if (response.Success)
                 {
-                    if (response.Success)
-                    {
-                        if (region.X < 0 || region.Y < 0)
-                        {
-                            response = new EOIResponse(false, $"The region x and y values cannot be negative");
-                        }
-                        else if (region.Width < 1 || region.Height < 1)
-                        {
-                            response = new EOIResponse(false, $"The region width and height values cannot be negative");
-                        }
-                    }
+                    response = EOIValidation.ValidateGenetecAlerting(notification.GenetecAlerting);
+                }
+
+                if (response.Success)
+                {
+                    response = EOIValidation.ValidateRESTUrl(notification.RESTUrl);
+                }
+            }
+
+            return response;
+
+        }
+
+        private static EOIResponse ValidatePhoneNumber(string phoneNumber)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            var trimmedPhoneNumber = phoneNumber?.Trim();
+
+            if (trimmedPhoneNumber != null)
+            {
+                if (trimmedPhoneNumber.Length < MIN_PHONE_NUMBER_LENGTH)
+                {
+                    response = new EOIResponse(false, $"If specified, phone number must be at least {MIN_PHONE_NUMBER_LENGTH} characters. Phone number is {phoneNumber}");
+                }
+                else if (trimmedPhoneNumber.Length > MAX_PHONE_NUMBER_LENGTH)
+                {
+                    response = new EOIResponse(false, $"If specified, phone number maximum length is {EOIValidation.MAX_PHONE_NUMBER_LENGTH}.");
+                }
+                else if (!trimmedPhoneNumber.StartsWith("+"))
+                {
+                    response = new EOIResponse(false, "The phone number must start with a country code like + 1");
                 }
             }
 
             return response;
         }
 
+        private static EOIResponse ValidateGenetecAlerting(EOIGenetecNotification genetecAlerting)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
 
+            if (genetecAlerting != null)
+            {
+                if (genetecAlerting.WebhookEventId == null)
+                {
+                    response = new EOIResponse(false, $"If genetec notification is included, webhook event ID must be specified. WebhookEventId is null.");
+                }
+                else if (genetecAlerting.WebhookCameraUUID == null || genetecAlerting.WebhookCameraUUID.Length < MIN_CAMERA_UUID_LENGTH)
+                {
+                    response = new EOIResponse(false, $"If genetec notification is included, the webhook camera uuid must be specified with a minimum length of {MIN_CAMERA_UUID_LENGTH} characters. WebhookCameraUUID = {genetecAlerting.WebhookCameraUUID}");
+                }
+            }
+
+            return response;
+        }
+
+        private static EOIResponse ValidateRESTUrl(string restUrl)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            var trimmedRestUrl = restUrl?.Trim();
+
+            if (trimmedRestUrl != null)
+            {
+                bool success = false;
+
+                if (Uri.TryCreate(restUrl, UriKind.Absolute, out Uri uriResult))
+                {
+                    success = (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+                }
+
+                if (!success)
+                {
+                    response = new EOIResponse(false, "The provided REST URL is not a valid URL");
+                }
+            }
+
+            return response;
+        }
     }
-
 }
