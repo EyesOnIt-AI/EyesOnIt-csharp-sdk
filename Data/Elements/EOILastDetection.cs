@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -8,10 +7,10 @@ namespace EyesOnItSDK.Data.Elements
 {
     public class EOILastDetection
     {
-        [JsonPropertyName("prompt_values")]
+        [JsonPropertyName("description_values")]
         public Dictionary<string, int> DescriptionValues { get; set; }
 
-        [JsonPropertyName("alerting_prompt")]
+        [JsonPropertyName("alerting_description")]
         public string AlertingDescription { get; set; }
 
         [JsonPropertyName("alert_time")]

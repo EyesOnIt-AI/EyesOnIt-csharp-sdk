@@ -1,12 +1,6 @@
-﻿using EyesOnItSDK.Data.Inputs;
-using System;
+﻿using EyesOnItSDK.Data.Elements;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Threading.Tasks;
-using EyesOnItSDK.Data.Elements;
-using System.Runtime.Remoting.Messaging;
 
 namespace EyesOnItSDK.Data.Outputs
 {
@@ -20,10 +14,10 @@ namespace EyesOnItSDK.Data.Outputs
             {
                 JsonElement dataElement = (JsonElement)eoiMessage.Data;
 
-                // Check if it contains the "detection" key
+                // Check if it contains the "stream" key
                 if (dataElement.TryGetProperty("streams", out JsonElement streamsElement))
                 {
-                    // Deserialize the detection part
+                    // Deserialize the streams part
                     Streams = JsonSerializer.Deserialize<List<EOIStreamInfo>>(streamsElement.GetRawText());
                 }
             }

@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using EyesOnItSDK.Data.Elements;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using EyesOnItSDK.Data.Elements;
 
 namespace EyesOnItSDK.Data.Inputs
 {

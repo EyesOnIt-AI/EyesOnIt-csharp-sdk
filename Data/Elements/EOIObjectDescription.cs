@@ -1,8 +1,4 @@
-﻿using System;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.Data.Elements
 {
@@ -13,6 +9,9 @@ namespace EyesOnItSDK.Data.Elements
         
         [JsonPropertyName("threshold")]
         public int? Threshold { get; set; }
+
+        [JsonPropertyName("alert")]
+        public bool? Alert{ get; set; }
 
         [JsonPropertyName("confidence")]
         public float? Confidence { get; set; }

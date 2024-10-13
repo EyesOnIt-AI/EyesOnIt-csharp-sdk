@@ -1,12 +1,5 @@
-﻿using EyesOnItSDK.Data.Inputs;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json.Serialization;
+﻿using System.Collections.Generic;
 using System.Text.Json;
-using System.Threading.Tasks;
-using EyesOnItSDK.Data.Elements;
-using System.Runtime.Remoting.Messaging;
 
 namespace EyesOnItSDK.Data.Outputs
 {
@@ -20,10 +13,10 @@ namespace EyesOnItSDK.Data.Outputs
             {
                 JsonElement dataElement = (JsonElement)eoiMessage.Data;
 
-                // Check if it contains the "detection" key
+                // Check if it contains the "supported_classes" key
                 if (dataElement.TryGetProperty("supported_classes", out JsonElement classesElement))
                 {
-                    // Deserialize the detection part
+                    // Deserialize the supported classes part
                     Classes = JsonSerializer.Deserialize<List<string>>(classesElement.GetRawText());
                 }
             }

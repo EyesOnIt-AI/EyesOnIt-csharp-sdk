@@ -23,15 +23,6 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("output_all_frames")]
         public bool OutputAllFrames { get; set; }
 
-        [JsonPropertyName("show_motion")]
-        public bool ShowMotion { get; set; }
-
-        [JsonPropertyName("show_bounding_box")]
-        public bool ShowBoundingBox { get; set; }
-
-        [JsonPropertyName("show_confidence_levels")]
-        public bool ShowConfidenceLevels { get; set; }
-
         [JsonPropertyName("start_seconds")]
         public int? StartSeconds { get; set; }
 
@@ -40,6 +31,9 @@ namespace EyesOnItSDK.Data.Inputs
 
         [JsonPropertyName("frame_rate")]
         public int? FrameRate { get; set; }
+
+        [JsonPropertyName("effects")]
+        public EOIEffects Effects { get; set; }
 
 
         public EOIProcessVideosInputs() : base()

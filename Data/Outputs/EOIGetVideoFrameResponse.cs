@@ -12,10 +12,10 @@ namespace EyesOnItSDK.Data.Outputs
             {
                 JsonElement dataElement = (JsonElement)eoiMessage.Data;
 
-                // Check if it contains the "detection" key
+                // Check if it contains the "image" key
                 if (dataElement.TryGetProperty("image", out JsonElement imageElement))
                 {
-                    // Deserialize the detection part
+                    // Deserialize the image part
                     Image = JsonSerializer.Deserialize<string>(imageElement.GetRawText());
                 }
             }

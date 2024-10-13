@@ -1,8 +1,4 @@
-﻿using System;
-using System.Net.Http;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+﻿using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.Data.Elements
 {
@@ -10,6 +6,9 @@ namespace EyesOnItSDK.Data.Elements
     {
         [JsonPropertyName("name")]
         public string Name { get; set; }
+
+        [JsonPropertyName("enabled")]
+        public bool Enabled { get; set; }
 
         [JsonPropertyName("polygon")]
         public EOIVertex[] Polygon { get; set; }

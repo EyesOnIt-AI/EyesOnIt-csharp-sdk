@@ -1,6 +1,4 @@
-﻿using EyesOnItSDK.Data.Elements;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,14 +15,14 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("status")]
         public string Status { get; set; }
 
-        [JsonPropertyName("last_alert_time")]
-        public DateTime LastAlertTime { get; set; }
-
         [JsonPropertyName("frame_rate")]
         public int FrameRate { get; set; }
 
         [JsonPropertyName("regions")]
         public EOIRegion[] Regions { get; set; }
+
+        [JsonPropertyName("lines")]
+        public EOILine[] Lines{ get; set; }
 
         [JsonPropertyName("notification")]
         public EOINotification Notification { get; set; }

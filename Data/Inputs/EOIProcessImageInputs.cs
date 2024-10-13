@@ -1,8 +1,5 @@
-﻿using System;
-using System.Net.Http;
+﻿using EyesOnItSDK.Data.Elements;
 using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using EyesOnItSDK.Data.Elements;
 
 namespace EyesOnItSDK.Data.Inputs
 {

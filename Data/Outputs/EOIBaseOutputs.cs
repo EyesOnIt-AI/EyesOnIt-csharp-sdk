@@ -1,10 +1,4 @@
-﻿using System;
-using System.Net.Http;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
-using EyesOnItSDK.Data.Elements;
-
-namespace EyesOnItSDK.Data.Outputs
+﻿namespace EyesOnItSDK.Data.Outputs
 {
     public class EOIBaseOutputs
     {

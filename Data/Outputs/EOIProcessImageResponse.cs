@@ -1,12 +1,6 @@
-﻿using EyesOnItSDK.Data.Inputs;
-using System;
+﻿using EyesOnItSDK.Data.Elements;
 using System.Collections.Generic;
-using System.Net.Http;
-using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Threading.Tasks;
-using EyesOnItSDK.Data.Elements;
-using System.Runtime.Remoting.Messaging;
 
 namespace EyesOnItSDK.Data.Outputs
 {
@@ -14,17 +8,26 @@ namespace EyesOnItSDK.Data.Outputs
     {
         public List<EOIDetection> Detections { get; set; }
 
+        public string Image { get; set; }
+
         internal EOIProcessImageResponse(EOIMessage eoiMessage) : base(eoiMessage)
         {
             if (Success)
             {
                 JsonElement dataElement = (JsonElement)eoiMessage.Data;
 
-                // Check if it contains the "detection" key
+                // Check if it contains the "detections" key
                 if (dataElement.TryGetProperty("detections", out JsonElement detectionElement))
                 {
-                    // Deserialize the detection part
+                    // Deserialize the detections part
                     Detections = JsonSerializer.Deserialize<List<EOIDetection>>(detectionElement.GetRawText());
+                }
+
+                // Check if it contains the "image" key
+                if (dataElement.TryGetProperty("image", out JsonElement imageElement))
+                {
+                    // Deserialize the image part
+                    Image = JsonSerializer.Deserialize<string>(imageElement.GetRawText());
                 }
             }
         }
