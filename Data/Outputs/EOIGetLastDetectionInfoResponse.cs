@@ -7,7 +7,7 @@ namespace EyesOnItSDK.Data.Outputs
 {
     public class EOIGetLastDetectionInfoResponse: EOIBaseOutputs
     {
-        public string Image{ get; set; }
+        public string Image { get; set; }
 
         public List<EOIDetection> Detections { get; set; }
 

@@ -166,6 +166,17 @@ namespace EyesOnItSDK
             EOIRegion[] regions,
             EOILine[] lines,
             int? frameRate = 5,
+            EOINotification notification = null)
+        {
+            return await AddStream(streamUrl, name, regions, lines, frameRate, notification, null, null);
+        }
+
+        public async Task<EOIAddStreamResponse> AddStream(
+            string streamUrl,
+            string name,
+            EOIRegion[] regions,
+            EOILine[] lines,
+            int? frameRate = 5,
             EOINotification notification = null,
             EOIRecording recording = null,
             EOIEffects effects = null)
@@ -504,56 +515,3 @@ namespace EyesOnItSDK
         }
     }
 }
-
-
-/*
-using System;
-using System.IO;
-using System.Net.Http;
-using System.Threading.Tasks;
-
-public class ImageUploader
-{
-    private readonly HttpClient _httpClient;
-
-    public ImageUploader()
-    {
-        _httpClient = new HttpClient();
-    }
-
-    public async Task<string> UploadImageAsync(string imagePath, string endpointUrl)
-    {
-        // Read the image file as a byte array
-        byte[] imageBytes = File.ReadAllBytes(imagePath);
-
-        // Convert the byte array to a Base64 encoded string
-        string base64String = Convert.ToBase64String(imageBytes);
-
-        // Create a JSON object with the Base64 string
-        var requestData = new
-        {
-            image_base64 = base64String
-        };
-
-        // Serialize the JSON object
-        var jsonContent = System.Text.Json.JsonSerializer.Serialize(requestData);
-
-        // Create StringContent with the serialized JSON data
-        var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
-
-        // Send POST request with the Base64 encoded image data
-        HttpResponseMessage response = await _httpClient.PostAsync(endpointUrl, content);
-        response.EnsureSuccessStatusCode();
-
-        // Read and return the response content
-        string responseContent = await response.Content.ReadAsStringAsync();
-        return responseContent;
-    }
-}
-
-var uploader = new ImageUploader();
-string imagePath = "path_to_your_image.jpg";
-string endpointUrl = "your_rest_endpoint_url";
-string response = await uploader.UploadImageAsync(imagePath, endpointUrl);
-
-*/

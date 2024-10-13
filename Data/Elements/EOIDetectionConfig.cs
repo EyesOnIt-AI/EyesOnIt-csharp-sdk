@@ -23,7 +23,7 @@ namespace EyesOnItSDK.Data.Elements
         public float AlertSeconds { get; set; }
 
         [JsonPropertyName("reset_seconds")]
-        public float ResetSeconds{ get; set; }
+        public float ResetSeconds { get; set; }
 
 
         public EOIDetectionConfig()

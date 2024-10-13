@@ -18,5 +18,10 @@ namespace EyesOnItSDK.Data.Elements
 
         [JsonPropertyName("detection_configs")]
         public EOIDetectionConfig[] DetectionConfigs { get; set; }
+
+        public EOIRegion()
+        {
+            Enabled = true;
+        }
     }
 }
