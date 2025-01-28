@@ -5,7 +5,7 @@ namespace EyesOnItSDK.Data.Outputs
 {
     public class EOIGetStreamDetailsResponse : EOIBaseOutputs
     {
-        public EOIStreamInfo Stream { get; set; }
+        public EOIStreamDetails Stream { get; set; }
 
         internal EOIGetStreamDetailsResponse(EOIMessage eoiMessage) : base(eoiMessage)
         {
@@ -17,7 +17,7 @@ namespace EyesOnItSDK.Data.Outputs
                 if (dataElement.TryGetProperty("stream", out JsonElement streamElement))
                 {
                     // Deserialize the stream part
-                    Stream = JsonSerializer.Deserialize<EOIStreamInfo>(streamElement.GetRawText());
+                    Stream = JsonSerializer.Deserialize<EOIStreamDetails>(streamElement.GetRawText());
                 }
             }
         }

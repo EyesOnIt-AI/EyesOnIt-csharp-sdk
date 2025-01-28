@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.Data.Elements
 {
-    public class EOIStreamInfo
+    public class EOIStreamDetails
     {
         [JsonPropertyName("stream_url")]
         public string StreamUrl { get; set; }
@@ -15,6 +15,21 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("status")]
         public string Status { get; set; }
 
+        [JsonPropertyName("frame_rate")]
+        public int FrameRate { get; set; }
+
+        [JsonPropertyName("regions")]
+        public EOIRegion[] Regions { get; set; }
+
+        [JsonPropertyName("lines")]
+        public EOILine[] Lines{ get; set; }
+
+        [JsonPropertyName("notification")]
+        public EOINotification Notification { get; set; }
+
+
+        [JsonPropertyName("gpu_util")]
+        public List<int> GpuUtil { get; set; }
 
         public bool IsMonitoring
         {
@@ -32,7 +47,7 @@ namespace EyesOnItSDK.Data.Elements
             }
         }
 
-        public static List<EOIStreamInfo> FromJson(string jsonString)
+        public static List<EOIStreamDetails> FromJson(string jsonString)
         {
             var options = new JsonSerializerOptions
             {
@@ -44,7 +59,7 @@ namespace EyesOnItSDK.Data.Elements
                 }
             };
 
-            List<EOIStreamInfo> data = jsonString == null ? null : JsonSerializer.Deserialize<List<EOIStreamInfo>>(jsonString, options);
+            List<EOIStreamDetails> data = jsonString == null ? null : JsonSerializer.Deserialize<List<EOIStreamDetails>>(jsonString, options);
 
             return data;
         }
@@ -56,7 +71,7 @@ namespace EyesOnItSDK.Data.Elements
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
             };
 
-            var jsonData = JsonSerializer.Serialize<EOIStreamInfo>(this, options);
+            var jsonData = JsonSerializer.Serialize<EOIStreamDetails>(this, options);
 
             return jsonData;
         }

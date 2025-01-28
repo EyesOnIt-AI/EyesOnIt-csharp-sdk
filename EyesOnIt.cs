@@ -17,18 +17,18 @@ namespace EyesOnItSDK
     public class EyesOnIt
     {
         private readonly HttpClient httpClient;
-        private readonly string baseUrl;
-        private readonly string processImagePath = "/process_image";
         private readonly string addStreamPath = "/add_stream";
+        private readonly string baseUrl;
+        private readonly string getAllStreamsInfoPath = "/get_all_streams_info";
+        private readonly string getLastDetectionInfoPath = "/get_last_detection_info";
+        private readonly string getStreamDetailsPath = "/get_stream_details";
+        private readonly string getSupportedClassesPath = "/get_supported_classes";
+        private readonly string getVideoFramePath = "/get_video_frame";
+        private readonly string monitorStreamPath = "/monitor_stream";
+        private readonly string processImagePath = "/process_image";
         private readonly string processVideosPath = "/process_videos";
         private readonly string removeStreamPath = "/remove_stream";
-        private readonly string monitorStreamPath = "/monitor_stream";
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
-        private readonly string getAllStreamsInfoPath = "/get_all_streams_info";
-        private readonly string getSupportedClassesPath = "/get_supported_classes";
-        private readonly string getLastDetectionInfoPath = "/get_last_detection_info";
-        private readonly string getPreviewVideoFramePath = "/get_preview_video_frame";
-        private readonly string getVideoFramePath = "/get_video_frame";
 
         public EyesOnIt(string baseUrl)
         {
@@ -131,11 +131,40 @@ namespace EyesOnItSDK
             }
             catch (HttpRequestException exc)
             {
-                Log.Error($"GetStreamsInfo: Exception: {exc.Message}");
+                Log.Error($"GetAllStreamsInfo: Exception: {exc.Message}");
                 eoiGetAllStreamsInfoResponse = new EOIGetAllStreamsInfoResponse(false, exc.Message);
             }
 
             return eoiGetAllStreamsInfoResponse;
+        }
+
+        public async Task<EOIGetStreamDetailsResponse> GetStreamDetails(EOIGetStreamDetailsInputs inputs)
+        {
+            EOIGetStreamDetailsResponse eoiGetStreamDetailsResponse;
+
+            string endPoint = $"{baseUrl}{getStreamDetailsPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+
+                var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                eoiGetStreamDetailsResponse = new EOIGetStreamDetailsResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"GetStreamDetails: Exception: {exc.Message}");
+                eoiGetStreamDetailsResponse = new EOIGetStreamDetailsResponse(false, exc.Message);
+            }
+
+            return eoiGetStreamDetailsResponse;
         }
 
         public async Task<EOIGetSupportedClassesResponse> GetSupportedClasses()
@@ -319,37 +348,6 @@ namespace EyesOnItSDK
             }
 
             return eoiStopMonitoringResponse;
-        }
-
-        public async Task<EOIGetVideoFrameResponse> GetPreviewVideoFrame(string streamUrl)
-        {
-            return await this.GetPreviewVideoFrame(new EOIGetPreviewFrameInputs(streamUrl));
-        }
-
-        public async Task<EOIGetVideoFrameResponse> GetPreviewVideoFrame(EOIGetPreviewFrameInputs inputs)
-        {
-            EOIGetVideoFrameResponse getPreviewFrameResponse = new EOIGetVideoFrameResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
-
-            if (getPreviewFrameResponse.Success)
-            {
-                string endPoint = $"{baseUrl}{getPreviewVideoFramePath}";
-                Log.Debug($"Calling {endPoint}");
-
-                try
-                {
-                    var jsonData = JsonSerializer.Serialize(inputs);
-
-                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                    getPreviewFrameResponse = new EOIGetVideoFrameResponse(eoiMessage);
-                }
-                catch (HttpRequestException exc)
-                {
-                    Log.Error($"GetPreviewFrame: Exception: {exc.Message}");
-                    getPreviewFrameResponse = new EOIGetVideoFrameResponse(false, exc.Message);
-                }
-            }
-
-            return getPreviewFrameResponse;
         }
 
         public async Task<EOIGetVideoFrameResponse> GetVideoFrame(string streamUrl)

@@ -5,9 +5,11 @@ namespace EyesOnItSDK.Data.Elements
     public class EOIVertex
     {
         [JsonPropertyName("x")]
+        [JsonConverter(typeof(EOIFloatToIntConverter))]
         public int X { get; set; }
 
         [JsonPropertyName("y")]
+        [JsonConverter(typeof(EOIFloatToIntConverter))]
         public int Y { get; set; }
 
         public EOIVertex(int x, int y)

@@ -22,41 +22,6 @@ namespace EyesOnItSDK
             this.eoiAPI = eoiAPI;
         }
 
-        public async Task<EOIGetVideoFrameResponse> GetFrameFromStream(string streamUrl)
-        {
-            EOIGetVideoFrameResponse apiGetVideoFrameResponse = new EOIGetVideoFrameResponse(false, "unknown error");
-
-            EOIGetAllStreamsInfoResponse getAllStreamsInfoResponse = await this.eoiAPI.GetAllStreamsInfo();
-
-            if (getAllStreamsInfoResponse.Success && getAllStreamsInfoResponse.Streams != null)
-            {
-                EOIStreamInfo streamInfo = GetInfoForStream(getAllStreamsInfoResponse.Streams, streamUrl);
-
-                if (streamInfo != null)
-                {
-                    if (!streamInfo.IsMonitoring)
-                    {
-                        // need to monitor stream before we can get a frame
-                        await this.eoiAPI.MonitorStream(new EOIMonitorStreamInputs(streamUrl, null));
-                    }
-
-                    // stream has been added and is being monitored. Get a frame.
-                    apiGetVideoFrameResponse = await this.eoiAPI.GetVideoFrame(new EOIGetVideoFrameInputs(streamUrl));
-
-                    if (!streamInfo.IsMonitoring)
-                    {
-                        await this.eoiAPI.StopMonitoringStream(new EOIStopMonitoringStreamInputs(streamUrl));
-                    }
-                }
-                else
-                {
-                    // stream not added. Get preview frame.
-                    apiGetVideoFrameResponse = await this.eoiAPI.GetPreviewVideoFrame(new EOIGetPreviewFrameInputs(streamUrl));
-                }
-            }
-
-            return apiGetVideoFrameResponse;
-        }
 
         public static EOIStreamInfo GetInfoForStream(List<EOIStreamInfo> streamInfoList, string streamUrl)
         {
