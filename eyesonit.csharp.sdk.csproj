@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
     <RootNamespace>EyesOnItSDK</RootNamespace>
-	<Version>3.0.1</Version>
+	<Version>3.0.3</Version>
 	<PackageReadmeFile>readme.md</PackageReadmeFile>
 	  <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
 	  <Title>EyesOnIt C# SDK</Title>
@@ -11,13 +11,13 @@
 	  <Company>EyesOnIt, Inc.</Company>
 	  <Product>EyesOnIt</Product>
 	  <Description>The C# SDK for EyesOnIt. EyesOnIt is a computer vision product based on a Large Vision Model. The EyesOnIt model was trained on 2 billion images. It detects thousands of types of objects and events based on natural language descriptions. Using this SDK, EyesOnIt can be easily integrated into existing products or projects by those without advanced computer vision or data science skills. EyesOnIt is container based software that can easily be deployed at the edge, on-premises or in cloud environments.</Description>
-	  <Copyright>Copyright 2024 by EyesOnIt</Copyright>
+	  <Copyright>Copyright 2025 by EyesOnIt</Copyright>
 	  <PackageProjectUrl>https://www.eyesonit.us</PackageProjectUrl>
 	  <PackageIcon>logo.png</PackageIcon>
 	  <RepositoryUrl>https://github.com/EyesOnIt-AI/EyesOnIt-csharp-sdk</RepositoryUrl>
 	  <RepositoryType>git</RepositoryType>
 	  <PackageTags>computer-vision;large-vision-model;video-security;video-surveillance;artificial-intelligence</PackageTags>
-	  <PackageReleaseNotes>Version 3.0.1 release - this is a beta release in preparation for the 3.0 release.</PackageReleaseNotes>
+	  <PackageReleaseNotes>Version 3.0.3 release</PackageReleaseNotes>
 	  <ApplicationIcon>favicon.ico</ApplicationIcon>
   </PropertyGroup>
 
