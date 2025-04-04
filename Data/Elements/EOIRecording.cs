@@ -7,13 +7,13 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("enabled")]
         public bool Enabled { get; set; }
 
-        [JsonPropertyName("save_with_alert")]
+        [JsonPropertyName("record_with_alert")]
         public bool SaveWithAlert { get; set; }
 
-        [JsonPropertyName("save_with_detection")]
+        [JsonPropertyName("record_with_detection")]
         public bool SaveWithDetection { get; set; }
 
-        [JsonPropertyName("save_with_motion")]
+        [JsonPropertyName("record_with_motion")]
         public bool SaveWithMotion { get; set; }
 
         [JsonPropertyName("save_original_copy")]

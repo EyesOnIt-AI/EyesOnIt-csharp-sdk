@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using EyesOnItSDK.Data.Elements.VMS;
+using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.Data.Elements
 {
@@ -24,6 +25,11 @@ namespace EyesOnItSDK.Data.Elements
 
         [JsonPropertyName("reset_seconds")]
         public float ResetSeconds { get; set; }
+
+
+        // VMS Properties
+        [JsonPropertyName("vms_config")]
+        public EOIVMSDetectionConfig VMSConfig { get; set; }
 
 
         public EOIDetectionConfig()

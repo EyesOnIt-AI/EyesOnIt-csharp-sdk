@@ -5,7 +5,8 @@ namespace EyesOnItSDK.Data.Elements
     public enum AlertDirection
     {
         Positive = 1,
-        Negative = 2
+        Negative = 2,
+        None = 3
     }
 
     public class EOIDetectionCondition
@@ -31,8 +32,15 @@ namespace EyesOnItSDK.Data.Elements
         {
             get
             {
-                // Translate _AlertDirection to AlertDirection when getting the property
-                return AlertDirectionStr.ToLower() == "positive" ? AlertDirection.Positive : AlertDirection.Negative;
+                if (AlertDirectionStr == null || AlertDirectionStr.Length == 0)
+                {
+                    return AlertDirection.None;
+                }
+                else
+                {
+                    // Translate _AlertDirection to AlertDirection when getting the property
+                    return AlertDirectionStr.ToLower() == "positive" ? AlertDirection.Positive : AlertDirection.Negative;
+                }
             }
             set
             {

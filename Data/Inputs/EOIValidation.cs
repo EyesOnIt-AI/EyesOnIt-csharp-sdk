@@ -1,4 +1,5 @@
 ﻿using EyesOnItSDK.Data.Elements;
+using EyesOnItSDK.Data.Elements.VMS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -564,7 +565,7 @@ namespace EyesOnItSDK.Data.Inputs
 
                 if (response.Success)
                 {
-                    response = EOIValidation.ValidateGenetecAlerting(notification.GenetecAlerting);
+                    response = EOIValidation.ValidateGenetecNotification(notification.GenetecNotification);
                 }
 
                 if (response.Success)
@@ -602,19 +603,21 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
-        private static EOIResponse ValidateGenetecAlerting(EOIGenetecNotification genetecAlerting)
+        private static EOIResponse ValidateGenetecNotification(EOIGenetecNotification genetecNotification)
         {
             EOIResponse response = EOIResponse.DefaultSuccess();
 
-            if (genetecAlerting != null)
+            if (genetecNotification != null)
             {
-                if (genetecAlerting.WebhookEventId == null)
+                // genetecNotification.WebhookEventId is optional now
+                //if (genetecNotification.WebhookEventId == null)
+                //{
+                //    response = new EOIResponse(false, $"If genetec notification is included, webhook event ID must be specified. WebhookEventId is null.");
+                //}
+                //else 
+                if (genetecNotification.WebhookCameraUUID == null || genetecNotification.WebhookCameraUUID.Length < MIN_CAMERA_UUID_LENGTH)
                 {
-                    response = new EOIResponse(false, $"If genetec notification is included, webhook event ID must be specified. WebhookEventId is null.");
-                }
-                else if (genetecAlerting.WebhookCameraUUID == null || genetecAlerting.WebhookCameraUUID.Length < MIN_CAMERA_UUID_LENGTH)
-                {
-                    response = new EOIResponse(false, $"If genetec notification is included, the webhook camera uuid must be specified with a minimum length of {MIN_CAMERA_UUID_LENGTH} characters. WebhookCameraUUID = {genetecAlerting.WebhookCameraUUID}");
+                    response = new EOIResponse(false, $"If genetec notification is included, the webhook camera uuid must be specified with a minimum length of {MIN_CAMERA_UUID_LENGTH} characters. WebhookCameraUUID = {genetecNotification.WebhookCameraUUID}");
                 }
             }
 

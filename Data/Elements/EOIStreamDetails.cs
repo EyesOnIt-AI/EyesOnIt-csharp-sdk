@@ -22,7 +22,7 @@ namespace EyesOnItSDK.Data.Elements
         public EOIRegion[] Regions { get; set; }
 
         [JsonPropertyName("lines")]
-        public EOILine[] Lines{ get; set; }
+        public EOILine[] Lines { get; set; }
 
         [JsonPropertyName("notification")]
         public EOINotification Notification { get; set; }

@@ -11,6 +11,9 @@ using EyesOnItSDK.Data.Elements;
 using EyesOnItSDK.Data.Inputs;
 using System.Net;
 using EyesOnItSDK.Data.Outputs;
+using System.Collections.Generic;
+using System.Xml.Linq;
+using System.Xml;
 
 namespace EyesOnItSDK
 {
@@ -488,7 +491,8 @@ namespace EyesOnItSDK
                 HttpResponseMessage httpResponse = await httpClient.PostAsync(endpoint, content);
                 string responseContent = await httpResponse.Content.ReadAsStringAsync();
 
-                Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseContent}");
+                string responseNoImage = this.RemoveImageProperties(responseContent);
+                Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseNoImage}");
 
                 eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
 
@@ -510,6 +514,59 @@ namespace EyesOnItSDK
             }
 
             return eoiMessage;
+        }
+
+        private string RemoveImageProperties(string json)
+        {
+            using (JsonDocument doc = JsonDocument.Parse(json))
+            {
+                JsonElement root = doc.RootElement;
+                JsonElement cleanedRoot = RemoveImageRecursive(root);
+
+                return JsonSerializer.Serialize(cleanedRoot, new JsonSerializerOptions { WriteIndented = true });
+            }
+        }
+
+        private JsonElement RemoveImageRecursive(JsonElement element)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new Utf8JsonWriter(stream))
+            {
+                if (element.ValueKind == JsonValueKind.Object)
+                {
+                    writer.WriteStartObject();
+                    foreach (JsonProperty property in element.EnumerateObject())
+                    {
+                        if (property.Name != "image") // Skip "image" key
+                        {
+                            writer.WritePropertyName(property.Name);
+                            RemoveImageRecursive(property.Value).WriteTo(writer);
+                        }
+                    }
+                    writer.WriteEndObject();
+                }
+                else if (element.ValueKind == JsonValueKind.Array)
+                {
+                    writer.WriteStartArray();
+                    foreach (JsonElement arrayItem in element.EnumerateArray())
+                    {
+                        RemoveImageRecursive(arrayItem).WriteTo(writer);
+                    }
+                    writer.WriteEndArray();
+                }
+                else
+                {
+                    element.WriteTo(writer);
+                }
+
+                writer.Flush();
+                stream.Seek(0, SeekOrigin.Begin);
+
+                using (JsonDocument newDoc = JsonDocument.Parse(stream))
+                {
+                    return newDoc.RootElement.Clone();
+                }
+            }
         }
     }
 }
