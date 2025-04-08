@@ -15,6 +15,12 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("frame_rate")]
         public int? FrameRate { get; set; }
 
+        [JsonPropertyName("index_for_search")]
+        public bool IndexForSearch { get; set; }
+
+        [JsonPropertyName("search_index_types")]
+        public string[] SearchIndexTypes { get; set; }
+
         [JsonPropertyName("lines")]
         public EOILine[] Lines { get; set; }
 
@@ -31,6 +37,7 @@ namespace EyesOnItSDK.Data.Inputs
         public EOIAddStreamInputs() : base()
         {
             this.FrameRate = 5;
+            this.IndexForSearch = false;
         }
 
         public EOIAddStreamInputs(string streamUrl, 
@@ -40,7 +47,9 @@ namespace EyesOnItSDK.Data.Inputs
             EOILine[] lines,
             EOINotification notification, 
             EOIRecording recording, 
-            EOIEffects effects) : base()
+            EOIEffects effects,
+            bool indexForSearch,
+            string[] searchIndexTypes) : base()
         {
             this.StreamUrl = streamUrl;
             this.Name = name;
@@ -50,6 +59,8 @@ namespace EyesOnItSDK.Data.Inputs
             this.Notification = notification;
             this.Recording = recording;
             this.Effects = effects;
+            this.IndexForSearch = indexForSearch;
+            this.SearchIndexTypes = searchIndexTypes;
         }
 
         public string ToJson()

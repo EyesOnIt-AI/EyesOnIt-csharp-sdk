@@ -32,6 +32,7 @@ namespace EyesOnItSDK
         private readonly string processVideosPath = "/process_videos";
         private readonly string removeStreamPath = "/remove_stream";
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
+        private readonly string searchPath = "/search";
 
         public EyesOnIt(string baseUrl)
         {
@@ -211,8 +212,12 @@ namespace EyesOnItSDK
             int? frameRate = 5,
             EOINotification notification = null,
             EOIRecording recording = null,
-            EOIEffects effects = null)
+            EOIEffects effects = null,
+            bool indexForSearch = false,
+            string[] searchIndexTypes = null)
         {
+            searchIndexTypes = searchIndexTypes ?? new string[0];
+
             EOIAddStreamInputs inputs = new EOIAddStreamInputs() 
             {   
                 Name = name,
@@ -222,7 +227,9 @@ namespace EyesOnItSDK
                 Lines = lines,
                 Notification = notification,
                 Recording = recording,
-                Effects = effects
+                Effects = effects,
+                IndexForSearch = indexForSearch,
+                SearchIndexTypes = searchIndexTypes
             };
 
             return await AddStream(inputs);
@@ -444,6 +451,36 @@ namespace EyesOnItSDK
             }
 
             return removeStreamResponse;
+        }
+
+        public async Task<EOISearchResponse> Search(EOISearchInputs inputs)
+        {
+            EOISearchResponse searchResponse = new EOISearchResponse(EOIValidation.ValidateSearchInputs(inputs));
+
+            if (searchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{searchPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    searchResponse = new EOISearchResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"Search: Exception: {exc.Message}");
+                    searchResponse = new EOISearchResponse(false, exc.Message);
+                }
+            }
+
+            return searchResponse;
         }
 
         private async Task<EOIMessage> GetAsync(string endPoint)

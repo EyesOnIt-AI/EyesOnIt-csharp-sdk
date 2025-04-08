@@ -5,6 +5,9 @@ namespace EyesOnItSDK.Data.Inputs
 {
     public class EOIProcessVideosInputs : EOIBaseInputs
     {
+        [JsonPropertyName("name")]
+        public string Name { get; set; }
+
         [JsonPropertyName("lines")]
         public EOILine[] Lines { get; set; }
 
@@ -13,9 +16,6 @@ namespace EyesOnItSDK.Data.Inputs
 
         [JsonPropertyName("output_video_path")]
         public string OutputVideoFile { get; set; }
-
-        [JsonPropertyName("synchronous")]
-        public bool Synchronous { get; set; }
 
         [JsonPropertyName("real_time")]
         public bool RealTime { get; set; }
@@ -32,6 +32,12 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("frame_rate")]
         public int? FrameRate { get; set; }
 
+        [JsonPropertyName("index_for_search")]
+        public bool IndexForSearch { get; set; }
+
+        [JsonPropertyName("search_index_types")]
+        public string[] SearchIndexTypes { get; set; }
+
         [JsonPropertyName("effects")]
         public EOIEffects Effects { get; set; }
 
@@ -46,12 +52,16 @@ namespace EyesOnItSDK.Data.Inputs
             string[] videoFiles,
             string outputFile,
             EOIRegion[] regions,
-            int frame_rate) : base()
+            int frame_rate,
+            EOIEffects effects) : base()
         {
             this.Regions = regions;
             this.InputVideoFiles = videoFiles;
             this.OutputVideoFile= outputFile;
             this.FrameRate = frame_rate;
+            this.Effects = effects;
+            this.IndexForSearch = false;
+            this.SearchIndexTypes = new string[] { };
         }
     }
 }

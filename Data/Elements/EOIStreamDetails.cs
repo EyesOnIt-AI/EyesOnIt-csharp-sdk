@@ -18,6 +18,12 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("frame_rate")]
         public int FrameRate { get; set; }
 
+        [JsonPropertyName("index_for_search")]
+        public bool IndexForSearch { get; set; }
+
+        [JsonPropertyName("search_index_types")]
+        public string[] SearchIndexTypes { get; set; }
+
         [JsonPropertyName("regions")]
         public EOIRegion[] Regions { get; set; }
 

@@ -26,6 +26,8 @@ namespace EyesOnItSDK.Data.Inputs
         private static float MIN_RESET_SECONDS = 0.1F;
         private static int MIN_CAMERA_UUID_LENGTH = 10;
         private static int MIN_MOTION_THRESHOLD = 10;
+        private static int MIN_SEARCH_QUERY_LENGTH = 2;
+
 
         public static EOIResponse ValidateProcessImageInputs(EOIProcessImageInputs inputs)
         {
@@ -126,6 +128,35 @@ namespace EyesOnItSDK.Data.Inputs
                 if (response.Success)
                 {
                     response = ValidateFrameRate(inputs.FrameRate);
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateSearchInputs(EOISearchInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (inputs == null)
+            {
+                response = new EOIResponse(false, "inputs = null. Search request must include inputs");
+            }
+            else
+            {
+                if (inputs.ClassName != null && !VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
+                {
+                    response = new EOIResponse(false, $"In search inputs, class name is not valid. Class name is {inputs.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
+                }
+
+                if (response.Success)
+                {
+                    var trimmedSearch = inputs.ObjectDescription == null ? null : inputs.ObjectDescription.Trim();
+
+                    if (trimmedSearch == null || trimmedSearch.Length < MIN_SEARCH_QUERY_LENGTH)
+                    {
+                        response = new EOIResponse(false, $"Search object description must be at {MIN_SEARCH_QUERY_LENGTH} characters. Object description is '{inputs.ObjectDescription}'");
+                    }
                 }
             }
 
@@ -274,7 +305,7 @@ namespace EyesOnItSDK.Data.Inputs
                         }
                         else if (detectionConfig.ClassName != null && !VALID_CLASS_NAMES.Contains(detectionConfig.ClassName.Trim()))
                         {
-                            response = new EOIResponse(false, $"In detection configurations, class name is not valid. Class name is {detectionConfig.ClassName}");
+                            response = new EOIResponse(false, $"In detection configurations, class name is not valid. Class name is {detectionConfig.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
                         }
                         else if (detectionConfig.ObjectSize != null && detectionConfig.ObjectSize < MIN_OBJECT_SIZE)
                         {
