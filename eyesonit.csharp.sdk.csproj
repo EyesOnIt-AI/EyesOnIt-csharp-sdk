@@ -31,7 +31,7 @@
     <PackageReference Include="Serilog.Enrichers.Thread" Version="3.1.0" />
     <PackageReference Include="Serilog.Enrichers.WithCaller" Version="1.2.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="System.Text.Json" Version="8.0.4" />
+    <PackageReference Include="System.Text.Json" Version="9.0.4" />
 	<None Include="nuget\readme.md" Pack="true" PackagePath="\" />
 	<None Include="LICENSE.txt" Pack="true" PackagePath="" />
   </ItemGroup>

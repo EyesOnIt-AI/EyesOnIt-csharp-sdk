@@ -33,6 +33,8 @@ namespace EyesOnItSDK
         private readonly string removeStreamPath = "/remove_stream";
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
         private readonly string searchPath = "/search";
+        private readonly string liveSearchPath = "/live_search";
+        private readonly string cancelLiveSearchPath = "/cancel_live_search";
 
         public EyesOnIt(string baseUrl)
         {
@@ -481,6 +483,66 @@ namespace EyesOnItSDK
             }
 
             return searchResponse;
+        }
+
+        public async Task<EOILiveSearchResponse> LiveSearch(EOILiveSearchInputs inputs)
+        {
+            EOILiveSearchResponse liveSearchResponse = new EOILiveSearchResponse(EOIValidation.ValidateLiveSearchInputs(inputs));
+
+            if (liveSearchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{liveSearchPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    liveSearchResponse = new EOILiveSearchResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"LiveSearch: Exception: {exc.Message}");
+                    liveSearchResponse = new EOILiveSearchResponse(false, exc.Message);
+                }
+            }
+
+            return liveSearchResponse;
+        }
+
+        public async Task<EOICancelLiveSearchResponse> CancelLiveSearch(EOICancelLiveSearchInputs inputs)
+        {
+            EOICancelLiveSearchResponse cancelLiveSearchResponse = new EOICancelLiveSearchResponse(EOIValidation.ValidateCancelLiveSearchInputs(inputs));
+
+            if (cancelLiveSearchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{cancelLiveSearchPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    cancelLiveSearchResponse = new EOICancelLiveSearchResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"CancelLiveSearch: Exception: {exc.Message}");
+                    cancelLiveSearchResponse = new EOICancelLiveSearchResponse(false, exc.Message);
+                }
+            }
+
+            return cancelLiveSearchResponse;
         }
 
         private async Task<EOIMessage> GetAsync(string endPoint)

@@ -144,7 +144,7 @@ namespace EyesOnItSDK.Data.Inputs
             }
             else
             {
-                if (inputs.ClassName != null && !VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
+                if (inputs.ClassName == null || !VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
                 {
                     response = new EOIResponse(false, $"In search inputs, class name is not valid. Class name is {inputs.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
                 }
@@ -158,6 +158,67 @@ namespace EyesOnItSDK.Data.Inputs
                         response = new EOIResponse(false, $"Search object description must be at {MIN_SEARCH_QUERY_LENGTH} characters. Object description is '{inputs.ObjectDescription}'");
                     }
                 }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateLiveSearchInputs(EOILiveSearchInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (inputs == null)
+            {
+                response = new EOIResponse(false, "inputs = null. Live search request must include inputs");
+            }
+            else
+            {
+                if (inputs.ClassName == null || !VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
+                {
+                    response = new EOIResponse(false, $"In search inputs, class name is not valid. Class name is {inputs.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
+                }
+
+                if (response.Success)
+                {
+                    var trimmedSearch = inputs.ObjectDescription?.Trim();
+
+                    if (trimmedSearch == null || trimmedSearch.Length < MIN_SEARCH_QUERY_LENGTH)
+                    {
+                        response = new EOIResponse(false, $"Search object description must be at {MIN_SEARCH_QUERY_LENGTH} characters. Object description is '{inputs.ObjectDescription}'");
+                    }
+                }
+
+                if (response.Success)
+                {
+                    response = inputs.AlertThreshold == null || (inputs.AlertThreshold >= 0 && inputs.AlertThreshold < 100) ?
+                        EOIResponse.DefaultSuccess() :
+                        new EOIResponse(false, $"If specified, live search alert threshold must be between 0 and 99. Value is {inputs.AlertThreshold}.");
+                }
+
+                if (response.Success)
+                {
+                    response = inputs.DurationSeconds == null || inputs.DurationSeconds >= 0 ?
+                        EOIResponse.DefaultSuccess() :
+                        new EOIResponse(false, $"live search duration must be greater than 0. Value is {inputs.DurationSeconds}");
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateCancelLiveSearchInputs(EOICancelLiveSearchInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (inputs == null)
+            {
+                response = new EOIResponse(false, "inputs = null. Cancel live search request must include inputs");
+            }
+            else
+            {
+                response = inputs.SearchID == -1 || inputs.SearchID > 0 ?
+                    EOIResponse.DefaultSuccess() :
+                    new EOIResponse(false, $"live search ID must be greater than 0. Value is {inputs.SearchID}");
             }
 
             return response;
