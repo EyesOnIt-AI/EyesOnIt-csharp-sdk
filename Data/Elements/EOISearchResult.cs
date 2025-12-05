@@ -24,6 +24,9 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("time")]
         public string Time { get; set; }
 
+        [JsonPropertyName("result_id")]
+        public string ResultId { get; set; }
+
         [JsonPropertyName("image")]
         public string Image { get; set; }
 

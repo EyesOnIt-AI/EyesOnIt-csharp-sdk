@@ -1,5 +1,4 @@
 ﻿using EyesOnItSDK.Data.Elements;
-using EyesOnItSDK.Data.Elements.VMS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +30,7 @@ namespace EyesOnItSDK.Data.Inputs
 
         public static EOIResponse ValidateProcessImageInputs(EOIProcessImageInputs inputs)
         {
-            EOIResponse response = ValidateBaseInputs(inputs, null, false);
+            EOIResponse response = ValidateBaseInputs(inputs, null, false, false);
 
             if (response.Success && (inputs.Base64Image == null || inputs.Base64Image.Length == 0))
             {
@@ -55,7 +54,14 @@ namespace EyesOnItSDK.Data.Inputs
 
                 if (response.Success)
                 {
-                    response = ValidateBaseInputs(inputs, inputs.Lines, true);
+                    response = ValidateSearchIndexing(inputs);
+                }
+
+                bool validSearchIndexInputs = response.Success && inputs.IndexForSearch;
+
+                if (response.Success)
+                {
+                    response = ValidateBaseInputs(inputs, inputs.Lines, true, validSearchIndexInputs);
                 }
 
                 if (response.Success)
@@ -89,7 +95,7 @@ namespace EyesOnItSDK.Data.Inputs
 
         public static EOIResponse ValidateProcessVideosInputs(EOIProcessVideosInputs inputs)
         {
-            EOIResponse response;
+            EOIResponse response = EOIResponse.DefaultSuccess();
 
             if (inputs == null)
             {
@@ -97,7 +103,14 @@ namespace EyesOnItSDK.Data.Inputs
             }
             else
             {
-                response = ValidateBaseInputs(inputs, inputs.Lines, true);
+                if (response.Success)
+                {
+                    response = ValidateSearchIndexing(inputs);
+                }
+
+                bool validSearchIndexInputs = response.Success && inputs.IndexForSearch;
+
+                response = ValidateBaseInputs(inputs, inputs.Lines, true, validSearchIndexInputs);
 
                 if (response.Success)
                 {
@@ -224,7 +237,29 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
-        private static EOIResponse ValidateBaseInputs(EOIBaseInputs inputs, EOILine[] lines, bool validateForVideo)
+        public static EOIResponse ValidateSimilaritySearchInputs(EOISimilaritySearchInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (inputs == null)
+            {
+                response = new EOIResponse(false, "inputs = null. Similarity search request must include inputs");
+            }
+            else
+            {
+                if (inputs.ReferenceImageId == null || inputs.ReferenceImageId.Length < 18)
+                {
+                    response = new EOIResponse(false, $"In similarity search inputs, ReferenceImageId is not valid. ReferenceImageId is {inputs.ReferenceImageId}. Valid ReferenceImageId values will come from a previous search result and will be at least 18 characters.");
+                }
+            }
+
+            return response;
+        }
+        private static EOIResponse ValidateBaseInputs(
+            EOIBaseInputs inputs,
+            EOILine[] lines,
+            bool validateForVideo,
+            bool validSearchIndexInputs)
         {
             EOIResponse response;
 
@@ -234,13 +269,17 @@ namespace EyesOnItSDK.Data.Inputs
             }
             else
             {
-                response = ValidateRegions(inputs.Regions, lines, validateForVideo);
+                response = ValidateRegions(inputs.Regions, lines, validateForVideo, validSearchIndexInputs);
             }
 
             return response;
         }
 
-        public static EOIResponse ValidateRegions(EOIRegion[] regions, EOILine[] lines, bool validateForVideo)
+        public static EOIResponse ValidateRegions(
+            EOIRegion[] regions,
+            EOILine[] lines, 
+            bool validateForVideo, 
+            bool validSearchIndexInputs)
         {
             EOIResponse response = regions == null || regions.Length == 0 ?
                 new EOIResponse(false, "request must include one or more regions configurtion")
@@ -272,7 +311,7 @@ namespace EyesOnItSDK.Data.Inputs
 
                     if (response.Success)
                     {
-                        response = ValidateDetectionConfigs(region.DetectionConfigs, lines, validateForVideo);
+                        response = ValidateDetectionConfigs(region.DetectionConfigs, lines, validateForVideo, validSearchIndexInputs);
                     }
 
                 }
@@ -344,13 +383,26 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
-        public static EOIResponse ValidateDetectionConfigs(EOIDetectionConfig[] detectionConfigs, EOILine[] lines, bool validateForVideo)
+        public static EOIResponse ValidateDetectionConfigs(
+            EOIDetectionConfig[] detectionConfigs, 
+            EOILine[] lines, 
+            bool validateForVideo, 
+            bool validSearchIndexInputs)
         {
-            EOIResponse response = detectionConfigs == null || detectionConfigs.Length == 0 ?
-                new EOIResponse(false, "request must include detection configurtions")
-                : EOIResponse.DefaultSuccess();
+            EOIResponse response = EOIResponse.DefaultSuccess();
 
-            if (response.Success && detectionConfigs != null)
+            if (detectionConfigs == null || detectionConfigs.Length == 0)
+            {
+                if (!validSearchIndexInputs)
+                {
+                    response = new EOIResponse(false, $"A region must have a detection configuration if the stream is not indexed for search");
+                }
+                else
+                {
+                    // this case is valid - valid search index inputs but no detection config. No more validation needed.
+                }
+            }
+            else
             {
                 foreach (var detectionConfig in detectionConfigs)
                 {
@@ -405,12 +457,10 @@ namespace EyesOnItSDK.Data.Inputs
 
         public static EOIResponse ValidateObjectDescriptions(EOIObjectDescription[] objectDescriptions, bool validateForVideo)
         {
-            EOIResponse response = objectDescriptions == null || objectDescriptions.Length == 0 ?
-                new EOIResponse(false, $"request must include an array of object descriptions. objectDescriptions = {objectDescriptions}")
-                : EOIResponse.DefaultSuccess();
+            EOIResponse response = EOIResponse.DefaultSuccess();
 
             // validate each object description - minimum length, no duplicates, thresholds
-            if (response.Success && objectDescriptions != null)
+            if (response.Success && objectDescriptions != null && objectDescriptions.Length > 0)
             {
                 var textSet = new HashSet<string>();
 
@@ -436,7 +486,7 @@ namespace EyesOnItSDK.Data.Inputs
                             }
                         }
 
-                        if (response.Success && validateForVideo)
+                        if (response.Success && objectDescription.Alert == true && validateForVideo)
                         {
                             if (objectDescription.Threshold < EOIValidation.MIN_PROMPT_THRESHOLD || objectDescription.Threshold > EOIValidation.MAX_PROMPT_THRESHOLD)
                             {
@@ -446,6 +496,31 @@ namespace EyesOnItSDK.Data.Inputs
                     }
                 }
 
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateSearchIndexing(EOIBaseVideoInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (inputs.IndexForSearch)
+            {
+                if (inputs.SearchIndexTypes == null || inputs.SearchIndexTypes.Length == 0)
+                {
+                    response = new EOIResponse(false, $"SearchIndexTypes must be specified when IndexForSearch = true. SearchIndexTypes = {inputs.SearchIndexTypes}");
+                }
+                else
+                {
+                    foreach (var searchIndexType in inputs.SearchIndexTypes)
+                    {
+                        if (!VALID_CLASS_NAMES.Contains(searchIndexType.Trim()))
+                        {
+                            response = new EOIResponse(false, $"SearchIndexTypes contains invalid class {searchIndexType}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
+                        }
+                    }
+                }
             }
 
             return response;
@@ -500,7 +575,7 @@ namespace EyesOnItSDK.Data.Inputs
         public static EOIResponse ValidateConditions(EOIDetectionCondition[] detectionConditions, EOILine[] lines)
         {
             EOIResponse response = EOIResponse.DefaultSuccess();
-            
+
             if (detectionConditions != null && detectionConditions.Length > 0)
             {
                 var countConditionTextSet = new HashSet<string>();

@@ -11,7 +11,7 @@ To get a free developer license and download EyesOnIt, refer to the EyesOnIt Use
 To add the SDK package to your project:
 
 ```
-dotnet add package eyesonit.csharp.sdk --version 3.0.3
+dotnet add package eyesonit.csharp.sdk --version 4.0.0
 ```
 
 More details about the the SDK package are [here](https://www.nuget.org/packages/eyesonit.csharp.sdk).

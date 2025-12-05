@@ -7,13 +7,16 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("phone_number")]
         public string PhoneNumber { get; set; }
 
-        [JsonPropertyName("image_notification")]
-        public bool ImageNotification { get; set; }
-
         [JsonPropertyName("genetec")]
         public EOIGenetecNotification GenetecNotification { get; set; }
 
         [JsonPropertyName("rest_url")]
         public string RESTUrl { get; set; }
+
+        [JsonPropertyName("include_image")]
+        public bool IncludeImage { get; set; }
+
+        [JsonPropertyName("include_count")]
+        public bool IncludeCount { get; set; }
     }
 }

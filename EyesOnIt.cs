@@ -35,6 +35,7 @@ namespace EyesOnItSDK
         private readonly string searchPath = "/search";
         private readonly string liveSearchPath = "/live_search";
         private readonly string cancelLiveSearchPath = "/cancel_live_search";
+        private readonly string similaritySearchPath = "/similarity_search";
 
         public EyesOnIt(string baseUrl)
         {
@@ -543,6 +544,36 @@ namespace EyesOnItSDK
             }
 
             return cancelLiveSearchResponse;
+        }
+
+        public async Task<EOISearchResponse> SimilaritySearch(EOISimilaritySearchInputs inputs)
+        {
+            EOISearchResponse searchResponse = new EOISearchResponse(EOIValidation.ValidateSimilaritySearchInputs(inputs));
+
+            if (searchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{similaritySearchPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    searchResponse = new EOISearchResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"Search: Exception: {exc.Message}");
+                    searchResponse = new EOISearchResponse(false, exc.Message);
+                }
+            }
+
+            return searchResponse;
         }
 
         private async Task<EOIMessage> GetAsync(string endPoint)

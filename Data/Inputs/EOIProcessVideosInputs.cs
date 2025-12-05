@@ -1,16 +1,11 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 using EyesOnItSDK.Data.Elements;
 
 namespace EyesOnItSDK.Data.Inputs
 {
-    public class EOIProcessVideosInputs : EOIBaseInputs
+    public class EOIProcessVideosInputs : EOIBaseVideoInputs
     {
-        [JsonPropertyName("name")]
-        public string Name { get; set; }
-
-        [JsonPropertyName("lines")]
-        public EOILine[] Lines { get; set; }
-
         [JsonPropertyName("input_video_path_list")]
         public string[] InputVideoFiles { get; set; }
 
@@ -29,17 +24,9 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("end_seconds")]
         public int? EndSeconds { get; set; }
 
-        [JsonPropertyName("frame_rate")]
-        public int? FrameRate { get; set; }
+        [JsonPropertyName("video_start_local_time")]
+        public string VideoStartLocalTime { get; set; }
 
-        [JsonPropertyName("index_for_search")]
-        public bool IndexForSearch { get; set; }
-
-        [JsonPropertyName("search_index_types")]
-        public string[] SearchIndexTypes { get; set; }
-
-        [JsonPropertyName("effects")]
-        public EOIEffects Effects { get; set; }
 
 
         public EOIProcessVideosInputs() : base()

@@ -24,6 +24,9 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("objects")]
         public EOIDetectionObject[] Objects { get; set; }
 
+        [JsonPropertyName("result_id")]
+        public string ResultId { get; set; }
+
         public EOIDetection()
         {
             
