@@ -13,11 +13,11 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("alert")]
         public bool? Alert { get; set; }
 
-        //[JsonPropertyName("confidence")]
-        //public float? Confidence { get; set; }
+        [JsonPropertyName("confidence")]
+        public float? Confidence { get; set; }
 
-        //[JsonPropertyName("over_threshold")]
-        //public bool? OverThreshold { get; set; }
+        [JsonPropertyName("over_threshold")]
+        public bool? OverThreshold { get; set; }
 
         [JsonPropertyName("background_prompt")]
         public bool BackgroundDescription { get; set; }
@@ -26,8 +26,8 @@ namespace EyesOnItSDK.Data.Elements
         {
             this.Text = null;
             this.Threshold = null;
-            //this.Confidence = null;
-            //this.OverThreshold = null;
+            this.Confidence = null;
+            this.OverThreshold = null;
             this.BackgroundDescription = false;
         }
 

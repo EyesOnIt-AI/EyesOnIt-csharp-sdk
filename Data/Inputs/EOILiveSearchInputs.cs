@@ -11,6 +11,9 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("object_description")]
         public string ObjectDescription { get; set; }
 
+        [JsonPropertyName("seed_id")]
+        public string ReferenceImageId { get; set; }
+
         [JsonPropertyName("alert_threshold")]
         public int? AlertThreshold { get; set; }
 
@@ -20,10 +23,11 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("notification")]
         public EOINotification Notification { get; set; }
 
-        public EOILiveSearchInputs(string className, string objectDescription, int alertThreshold, EOINotification notification, int? durationSeconds)
+        public EOILiveSearchInputs(string className, string objectDescription, string referenceImageId, int alertThreshold, EOINotification notification, int? durationSeconds)
         {
             ClassName = className;
             ObjectDescription = objectDescription;
+            ReferenceImageId = referenceImageId;
             AlertThreshold = alertThreshold;
             DurationSeconds = durationSeconds;
             Notification = notification;

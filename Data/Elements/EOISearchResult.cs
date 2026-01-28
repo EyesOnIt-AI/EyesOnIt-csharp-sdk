@@ -21,6 +21,15 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("stream")]
         public string Stream { get; set; }
 
+        [JsonPropertyName("stream_name")]
+        public string StreamName { get; set; }
+
+        [JsonPropertyName("region")]
+        public string RegionName { get; set; }
+
+        [JsonPropertyName("class_name")]
+        public string ClassName { get; set; }
+
         [JsonPropertyName("time")]
         public string Time { get; set; }
 

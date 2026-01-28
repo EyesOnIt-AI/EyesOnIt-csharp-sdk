@@ -42,8 +42,10 @@ namespace EyesOnItSDK.SocketIO
                 {
                     byte[] imageBytes = Convert.FromBase64String(base64Image);
                     using (var ms = new MemoryStream(imageBytes))
+                    using (var tempImg = System.Drawing.Image.FromStream(ms))
                     {
-                        Image = System.Drawing.Image.FromStream(ms);
+                        // clone into a Bitmap so it no longer depends on the MemoryStream
+                        Image = new System.Drawing.Bitmap(tempImg);
                     }
                 }
             }
@@ -107,6 +109,32 @@ namespace EyesOnItSDK.SocketIO
         [JsonPropertyName("result_id")]
         public string ResultId { get; set; }
 
+        [JsonPropertyName("image")]
+        public string Base64Image
+        {
+            get
+            {
+                return base64Image;
+            }
+            set
+            {
+                base64Image = value;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    byte[] imageBytes = Convert.FromBase64String(base64Image);
+                    using (var ms = new MemoryStream(imageBytes))
+                    using (var tempImg = System.Drawing.Image.FromStream(ms))
+                    {
+                        // clone into a Bitmap so it no longer depends on the MemoryStream
+                        Image = new System.Drawing.Bitmap(tempImg);
+                    }
+                }
+            }
+        }
+
+        private string base64Image;
+
+        public System.Drawing.Image Image { get; set; }
     }
 
     public class StreamDetectionsData
@@ -115,7 +143,8 @@ namespace EyesOnItSDK.SocketIO
         public StreamDetectionData[] Detections { get; set; }
 
         [JsonPropertyName("image")]
-        public string Base64Image { 
+        public string Base64Image
+        {
             get
             {
                 return base64Image;
@@ -123,15 +152,17 @@ namespace EyesOnItSDK.SocketIO
             set
             {
                 base64Image = value;
-                if (!string.IsNullOrEmpty(value)) 
+                if (!string.IsNullOrEmpty(value))
                 {
                     byte[] imageBytes = Convert.FromBase64String(base64Image);
                     using (var ms = new MemoryStream(imageBytes))
+                    using (var tempImg = System.Drawing.Image.FromStream(ms))
                     {
-                        Image = System.Drawing.Image.FromStream(ms);
+                        // clone into a Bitmap so it no longer depends on the MemoryStream
+                        Image = new System.Drawing.Bitmap(tempImg);
                     }
                 }
-            } 
+            }
         }
 
         private string base64Image;
