@@ -282,7 +282,7 @@ namespace EyesOnItSDK.Data.Inputs
             bool validSearchIndexInputs)
         {
             EOIResponse response = regions == null || regions.Length == 0 ?
-                new EOIResponse(false, "request must include one or more regions configurtion")
+                new EOIResponse(false, "request must include one or more region configurations")
                 : EOIResponse.DefaultSuccess();
 
             if (response.Success && regions != null)
@@ -358,7 +358,7 @@ namespace EyesOnItSDK.Data.Inputs
         public static EOIResponse ValidateMotionDetection(EOIMotionDetection motionDetection)
         {
             EOIResponse response = motionDetection == null ?
-                new EOIResponse(false, "request must include motion_detection configurtion")
+                new EOIResponse(false, "request must include motion_detection configuration")
                 : EOIResponse.DefaultSuccess();
 
             if (response.Success && motionDetection != null)
