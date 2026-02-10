@@ -26,6 +26,9 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("reset_seconds")]
         public float ResetSeconds { get; set; }
 
+        [JsonPropertyName("face_recognition")]
+        public EOIFaceRecognitionConfig FaceRecognitionConfig { get; set; }
+
 
         // VMS Properties
         [JsonPropertyName("vms_config")]

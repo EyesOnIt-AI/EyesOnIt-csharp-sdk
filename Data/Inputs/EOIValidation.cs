@@ -26,6 +26,13 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MIN_CAMERA_UUID_LENGTH = 10;
         private static int MIN_MOTION_THRESHOLD = 10;
         private static int MIN_SEARCH_QUERY_LENGTH = 2;
+        private static int MIN_FACEREC_GROUP_NAME_LENGTH = 2;
+        private static int MIN_FACEREC_PERSON_NAME_LENGTH = 2;
+        private static int MIN_FACEREC_GROUP_ID_LENGTH = 2;
+        private static int MIN_FACEREC_PERSON_ID_LENGTH = 2;
+        private static int MIN_FACEREC_GROUP_DESCRIPTION_LENGTH = 10;
+        private static int MIN_FACEREC_FILE_PATH_LENGTH = 5;
+        private static int MIN_FACEREC_IMAGE_BASE64_LENGTH = 20;
 
 
         public static EOIResponse ValidateProcessImageInputs(EOIProcessImageInputs inputs)
@@ -743,6 +750,176 @@ namespace EyesOnItSDK.Data.Inputs
 
             return response;
 
+        }
+
+        public static EOIResponse ValidateFacerecGroupNameSearch(string search)
+        {
+            var trimmedSearch = search == null ? null : search.Trim();
+
+            return trimmedSearch != null && trimmedSearch.Length > 0 ?
+                EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, $"The group name search string {trimmedSearch} must be at least 1 character");
+        }
+
+        public static EOIResponse ValidateFacerecPeopleNameSearch(string search)
+        {
+            var trimmedSearch = search == null ? null : search.Trim();
+
+            return trimmedSearch != null && trimmedSearch.Length > 0 ?
+                EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, $"The person name search string {trimmedSearch} must be at least 1 character");
+        }
+
+        public static EOIResponse ValidateRemoveFacerecGroupInputs(string groupId)
+        {
+            var trimmedId = groupId == null ? null : groupId.Trim();
+
+            return trimmedId != null && trimmedId.Length >= MIN_FACEREC_GROUP_ID_LENGTH ?
+                EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, $"The group ID {trimmedId} must be at least {MIN_FACEREC_GROUP_ID_LENGTH} character(s)");
+        }
+
+        public static EOIResponse ValidateNewFacerecGroup(EOIAddFacerecGroupInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (response.Success)
+            {
+                var trimmedGroupId = inputs.GroupId?.Trim();
+                if (trimmedGroupId == null || trimmedGroupId.Length < MIN_FACEREC_GROUP_ID_LENGTH)
+                {
+                    response = new EOIResponse(false,$"The group ID {trimmedGroupId} must be at least {MIN_FACEREC_GROUP_ID_LENGTH} character(s)");
+                }
+            }
+
+            if (response.Success)
+            {
+                var trimmedGroupName = inputs.GroupName?.Trim();
+                if (trimmedGroupName == null || trimmedGroupName.Length < MIN_FACEREC_GROUP_NAME_LENGTH)
+                {
+                    response = new EOIResponse(false, $"The group name {trimmedGroupName} must be at least {MIN_FACEREC_GROUP_NAME_LENGTH} character(s)");
+                }
+            }
+
+            if (response.Success)
+            {
+                var trimmedGroupDescription = inputs.GroupDescription?.Trim();
+                if (trimmedGroupDescription == null || trimmedGroupDescription.Length < MIN_FACEREC_GROUP_DESCRIPTION_LENGTH)
+                {
+                    response = new EOIResponse(false, $"The group description {trimmedGroupDescription} must be at least {MIN_FACEREC_GROUP_DESCRIPTION_LENGTH} character(s)");
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateNewFacerecPerson(EOIAddFacerecPersonInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (response.Success)
+            {
+                var trimmedPersonId = inputs.PersonId?.Trim();
+                if (trimmedPersonId == null || trimmedPersonId.Length < MIN_FACEREC_PERSON_ID_LENGTH)
+                {
+                    response = new EOIResponse(false, $"The person ID {trimmedPersonId} must be at least {MIN_FACEREC_PERSON_ID_LENGTH} character(s)");
+                }
+            }
+
+            if (response.Success)
+            {
+                var trimmedPersonName = inputs.PersonDisplayName?.Trim();
+                if (trimmedPersonName == null || trimmedPersonName.Length < MIN_FACEREC_PERSON_NAME_LENGTH)
+                {
+                    response = new EOIResponse(false, $"The person name {trimmedPersonName} must be at least {MIN_FACEREC_PERSON_NAME_LENGTH} character(s)");
+                }
+            }
+
+            if (response.Success)
+            {
+                if (inputs.PersonGroups != null && inputs.PersonGroups.Length > 0)
+                {
+                    foreach (var personGroup in inputs.PersonGroups)
+                    {
+                        if (response.Success)
+                        {
+                            var trimmedGroupId = personGroup.Trim();
+
+                            if (trimmedGroupId == null || trimmedGroupId.Length < MIN_FACEREC_GROUP_ID_LENGTH)
+                            {
+                                response = new EOIResponse(false, $"The group ID {trimmedGroupId} must be at least {MIN_FACEREC_GROUP_ID_LENGTH} character(s)");
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (response.Success)
+            {
+                var imageCount = 0;
+
+                if (inputs.PersonImages != null && inputs.PersonImages.Count() > 0)
+                {
+                    foreach (var personImage in inputs.PersonImages) 
+                    {
+                        if (response.Success)
+                        {
+                            if (personImage.Image == null || personImage.Image.Trim().Length < MIN_FACEREC_IMAGE_BASE64_LENGTH)
+                            {
+                                response = new EOIResponse(false, "Please provide a valid base64 image string");
+                            }
+                            else if (personImage.FilePath == null || personImage.FilePath.Trim().Length < MIN_FACEREC_FILE_PATH_LENGTH)
+                            {
+                                response = new EOIResponse(false, "Please provide a valid file path");
+                            }
+                            else
+                            {
+                                imageCount++;
+                            }
+                        }
+                    }
+                }
+
+                if (imageCount == 0)
+                {
+                    response = new EOIResponse(false, "Please provide at least one image as base64 or as a file path");
+                }
+            }
+
+            return response;
+        }
+        public static EOIResponse ValidateAddFacerecPeople(EOIAddFacerecPeopleInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (response.Success)
+            {
+                var trimmedFilePath = inputs.FilePath?.Trim();
+                if (trimmedFilePath == null || trimmedFilePath.Length < MIN_FACEREC_FILE_PATH_LENGTH)
+                {
+                    response = new EOIResponse(false, "Please provide a valid file path");
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateRemoveFacerecPersonInputs(string personId)
+        {
+            var trimmedId = personId == null ? null : personId.Trim();
+
+            return trimmedId != null && trimmedId.Length >= MIN_FACEREC_PERSON_ID_LENGTH ?
+                EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, $"The person ID {trimmedId} must be at least {MIN_FACEREC_PERSON_ID_LENGTH} character(s)");
+        }
+
+        public static EOIResponse ValidateFacerecPersonDetailsInputs(string personId)
+        {
+            var trimmedId = personId == null ? null : personId.Trim();
+
+            return trimmedId != null && trimmedId.Length >= MIN_FACEREC_PERSON_ID_LENGTH ?
+                EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, $"The person ID {trimmedId} must be at least {MIN_FACEREC_PERSON_ID_LENGTH} character(s)");
         }
 
         private static EOIResponse ValidatePhoneNumber(string phoneNumber)
