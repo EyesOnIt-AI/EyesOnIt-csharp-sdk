@@ -10,6 +10,9 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("bounds")]
         public EOIBoundingBox Bounds { get; set; }
 
+        [JsonPropertyName("face")]
+        public EOIFaceDetectionObject Face { get; set; }
+
         public EOIDetectionObject()
         {
             
