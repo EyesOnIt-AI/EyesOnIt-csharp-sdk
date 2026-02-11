@@ -16,7 +16,7 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MAX_PROMPT_THRESHOLD = 99;
         private static int MIN_FRAME_RATE = 1;
         private static int MIN_LINE_VERTEX_COUNT = 2;
-        private static string[] VALID_CLASS_NAMES = { "person", "vehicle", "bag", "animal" };
+        private static string[] VALID_CLASS_NAMES = { "person", "vehicle", "bag", "animal", "face", "unknown" };
         private static string[] COUNT_CONDITION_TYPES = { "count_equals", "count_greater_than", "count_less_than" };
         private static string[] LINE_CROSS_CONDITION_TYPES = { "line_cross" };
         private static int MIN_LINE_NAME_LENGTH = 3;
