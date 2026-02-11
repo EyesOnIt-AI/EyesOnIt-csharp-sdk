@@ -36,6 +36,15 @@ namespace EyesOnItSDK
         private readonly string liveSearchPath = "/live_search";
         private readonly string cancelLiveSearchPath = "/cancel_live_search";
         private readonly string similaritySearchPath = "/similarity_search";
+        private readonly string facerecGroupsPath = "/facerec_groups";
+        private readonly string facerecSearchGroupNamesPath = "/facerec_search_group_names";
+        private readonly string facerecSearchPeopleNamesPath = "/facerec_search_people_names";
+        private readonly string facerecAddGroupPath = "/facerec_add_group";
+        private readonly string facerecRemoveGroupPath = "/facerec_remove_group";
+        private readonly string facerecAddPersonPath = "/facerec_add_person";
+        private readonly string facerecAddPeoplePath = "/facerec_add_people";
+        private readonly string facerecRemovePersonPath = "/facerec_remove_person";
+        private readonly string facerecPersonDetailsPath = "/facerec_person_details";
 
         public EyesOnIt(string baseUrl)
         {
@@ -574,6 +583,238 @@ namespace EyesOnItSDK
             }
 
             return searchResponse;
+        }
+
+        public async Task<EOIGetFacerecGroupsResponse> GetFacerecGroups()
+        {
+            EOIGetFacerecGroupsResponse eoiGetFacerecGroupsResponse;
+
+            string endPoint = $"{baseUrl}{facerecGroupsPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint);
+                eoiGetFacerecGroupsResponse = new EOIGetFacerecGroupsResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"GetFacerecGroups: Exception: {exc.Message}");
+                eoiGetFacerecGroupsResponse = new EOIGetFacerecGroupsResponse(false, exc.Message);
+            }
+
+            return eoiGetFacerecGroupsResponse;
+        }
+        public async Task<EOIBaseOutputs> AddFacerecGroup(EOIAddFacerecGroupInputs inputs)
+        {
+            EOIBaseOutputs addFacerecGroupResponse = new EOIBaseOutputs(EOIValidation.ValidateNewFacerecGroup(inputs));
+
+            if (addFacerecGroupResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{facerecAddGroupPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    addFacerecGroupResponse = new EOIBaseOutputs(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"AddFacerecGroup: Exception: {exc.Message}");
+                    addFacerecGroupResponse = new EOIBaseOutputs(false, exc.Message);
+                }
+            }
+
+            return addFacerecGroupResponse;
+        }
+
+        public async Task<EOIRemoveFacerecGroupResponse> RemoveFacerecGroup(string groupId)
+        {
+            EOIRemoveFacerecGroupResponse removeFacerecGroupResponse = new EOIRemoveFacerecGroupResponse(EOIValidation.ValidateRemoveFacerecGroupInputs(groupId));
+
+            if (removeFacerecGroupResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{facerecRemoveGroupPath}";
+                Log.Debug($"Calling {endPoint}");
+
+                try
+                {
+                    var jsonData = JsonSerializer.Serialize(new { group_id = groupId });
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    removeFacerecGroupResponse = new EOIRemoveFacerecGroupResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"RemoveFacerecGroup: Exception: {exc.Message}");
+                    removeFacerecGroupResponse = new EOIRemoveFacerecGroupResponse(false, exc.Message);
+                }
+            }
+
+            return removeFacerecGroupResponse;
+        }
+
+        public async Task<EOIBaseOutputs> AddFacerecPerson(EOIAddFacerecPersonInputs inputs)
+        {
+            EOIBaseOutputs addFacerecPersonResponse = new EOIBaseOutputs(EOIValidation.ValidateNewFacerecPerson(inputs));
+
+            if (addFacerecPersonResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{facerecAddPersonPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    addFacerecPersonResponse = new EOIBaseOutputs(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"AddFacerecPerson: Exception: {exc.Message}");
+                    addFacerecPersonResponse = new EOIBaseOutputs(false, exc.Message);
+                }
+            }
+
+            return addFacerecPersonResponse;
+        }
+
+        public async Task<EOIBaseOutputs> AddFacerecPeople(EOIAddFacerecPeopleInputs inputs)
+        {
+            EOIBaseOutputs addFacerecPeopleResponse = new EOIBaseOutputs(EOIValidation.ValidateAddFacerecPeople(inputs));
+
+            if (addFacerecPeopleResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{facerecAddPeoplePath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    addFacerecPeopleResponse = new EOIBaseOutputs(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"AddFacerecPerson: Exception: {exc.Message}");
+                    addFacerecPeopleResponse = new EOIBaseOutputs(false, exc.Message);
+                }
+            }
+
+            return addFacerecPeopleResponse;
+        }
+
+        public async Task<EOIBaseOutputs> RemoveFacerecPerson(string personId)
+        {
+            EOIBaseOutputs removeFacerecPersonResponse = new EOIBaseOutputs(EOIValidation.ValidateRemoveFacerecPersonInputs(personId));
+
+            if (removeFacerecPersonResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{facerecRemovePersonPath}";
+                Log.Debug($"Calling {endPoint}");
+
+                try
+                {
+                    var jsonData = JsonSerializer.Serialize(new { person_id = personId });
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    removeFacerecPersonResponse = new EOIBaseOutputs(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"RemoveFacerecPerson: Exception: {exc.Message}");
+                    removeFacerecPersonResponse = new EOIBaseOutputs(false, exc.Message);
+                }
+            }
+
+            return removeFacerecPersonResponse;
+        }
+
+        public async Task<EOISearchFacerecNamesResponse> SearchFacerecGroupNames(String search)
+        {
+            EOISearchFacerecNamesResponse searchResponse = new EOISearchFacerecNamesResponse(EOIValidation.ValidateFacerecGroupNameSearch(search));
+
+            if (searchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{facerecSearchGroupNamesPath}";
+
+                try
+                {
+                    var jsonData = JsonSerializer.Serialize(new { search_text = search });
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    searchResponse = new EOISearchFacerecNamesResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"Search: Exception: {exc.Message}");
+                    searchResponse = new EOISearchFacerecNamesResponse(false, exc.Message);
+                }
+            }
+
+            return searchResponse;
+        }
+
+        public async Task<EOISearchFacerecNamesResponse> SearchFacerecPeopleNames(String search)
+        {
+            EOISearchFacerecNamesResponse searchResponse = new EOISearchFacerecNamesResponse(EOIValidation.ValidateFacerecPeopleNameSearch(search));
+
+            if (searchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{facerecSearchPeopleNamesPath}";
+
+                try
+                {
+                    var jsonData = JsonSerializer.Serialize(new { search_text = search });
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    searchResponse = new EOISearchFacerecNamesResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"Search: Exception: {exc.Message}");
+                    searchResponse = new EOISearchFacerecNamesResponse(false, exc.Message);
+                }
+            }
+
+            return searchResponse;
+        }
+
+        public async Task<EOIFacerecPersonDetailsResponse> GetFacerecPersonDetails(String personId)
+        {
+            EOIFacerecPersonDetailsResponse eoiFacerecPersonDetailsResponse = new EOIFacerecPersonDetailsResponse(EOIValidation.ValidateFacerecPersonDetailsInputs(personId));
+
+            string endPoint = $"{baseUrl}{facerecPersonDetailsPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                var jsonData = JsonSerializer.Serialize(new { person_id = personId });
+                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                eoiFacerecPersonDetailsResponse = new EOIFacerecPersonDetailsResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"GetFacerecGroups: Exception: {exc.Message}");
+                eoiFacerecPersonDetailsResponse = new EOIFacerecPersonDetailsResponse(false, exc.Message);
+            }
+
+            return eoiFacerecPersonDetailsResponse;
         }
 
         private async Task<EOIMessage> GetAsync(string endPoint)
