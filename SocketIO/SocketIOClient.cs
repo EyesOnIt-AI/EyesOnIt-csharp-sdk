@@ -134,13 +134,13 @@ namespace EyesOnItSDK.SocketIO
                 OnLiveSearchDetection?.Invoke(payload);
             });
 
-            socket.On("count_update", response =>
-            {
-                Log.Debug($"SocketIOClient: count_update message received");
+            //socket.On("count_update", response =>
+            //{
+            //    Log.Debug($"SocketIOClient: count_update message received");
 
-                JsonElement jsonElement = response.GetValue<JsonElement>(0);
-                OnCountUpdate?.Invoke(jsonElement);
-            });
+            //    JsonElement jsonElement = response.GetValue<JsonElement>(0);
+            //    OnCountUpdate?.Invoke(jsonElement);
+            //});
 
             socket.On("subscribed", response =>
             {
