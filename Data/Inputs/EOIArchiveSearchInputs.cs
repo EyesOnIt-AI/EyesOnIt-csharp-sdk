@@ -4,15 +4,16 @@ using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.Data.Inputs
 {
-    public class EOILiveSearchInputs : EOISearchInputs
+    public class EOIArchiveSearchInputs : EOISearchInputs
     {
+        [JsonPropertyName("start_date_time")]
+        public string StartDateTime { get; set; }
 
-        [JsonPropertyName("duration_seconds")] 
-        public int? DurationSeconds { get; set; }
-        [JsonPropertyName("notification")]
-        public EOINotification Notification { get; set; }
+        [JsonPropertyName("end_date_time")]
+        public string EndDateTime { get; set; }
 
-        public EOILiveSearchInputs() : base()
+
+        public EOIArchiveSearchInputs() : base()
         {
         }
 
@@ -28,7 +29,7 @@ namespace EyesOnItSDK.Data.Inputs
             return jsonData;
         }
 
-        public static EOILiveSearchInputs FromJson(string jsonString)
+        public static EOIArchiveSearchInputs FromJson(string jsonString)
         {
             var options = new JsonSerializerOptions
             {
@@ -39,9 +40,9 @@ namespace EyesOnItSDK.Data.Inputs
                 }
             };
 
-            EOILiveSearchInputs liveSearchInputs = jsonString == null ? null : JsonSerializer.Deserialize<EOILiveSearchInputs>(jsonString, options);
+            EOIArchiveSearchInputs archiveSearchInputs = jsonString == null ? null : JsonSerializer.Deserialize<EOIArchiveSearchInputs>(jsonString, options);
 
-            return liveSearchInputs;
+            return archiveSearchInputs;
         }
     }
 }

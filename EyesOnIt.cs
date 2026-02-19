@@ -32,10 +32,9 @@ namespace EyesOnItSDK
         private readonly string processVideosPath = "/process_videos";
         private readonly string removeStreamPath = "/remove_stream";
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
-        private readonly string searchPath = "/search";
-        private readonly string liveSearchPath = "/live_search";
+        private readonly string searchLivePath = "/live_search";
+        private readonly string searchArchivePath = "/archive_search";
         private readonly string cancelLiveSearchPath = "/cancel_live_search";
-        private readonly string similaritySearchPath = "/similarity_search";
         private readonly string facerecGroupsPath = "/facerec_groups";
         private readonly string facerecSearchGroupNamesPath = "/facerec_search_group_names";
         private readonly string facerecSearchPeopleNamesPath = "/facerec_search_people_names";
@@ -465,13 +464,13 @@ namespace EyesOnItSDK
             return removeStreamResponse;
         }
 
-        public async Task<EOISearchResponse> Search(EOISearchInputs inputs)
+        public async Task<EOISearchResponse> SearchArchive(EOIArchiveSearchInputs inputs)
         {
-            EOISearchResponse searchResponse = new EOISearchResponse(EOIValidation.ValidateSearchInputs(inputs));
+            EOISearchResponse searchResponse = new EOISearchResponse(EOIValidation.ValidateArchiveSearchInputs(inputs));
 
             if (searchResponse.Success)
             {
-                string endPoint = $"{baseUrl}{searchPath}";
+                string endPoint = $"{baseUrl}{searchArchivePath}";
 
                 try
                 {
@@ -495,13 +494,13 @@ namespace EyesOnItSDK
             return searchResponse;
         }
 
-        public async Task<EOILiveSearchResponse> LiveSearch(EOILiveSearchInputs inputs)
+        public async Task<EOILiveSearchResponse> SearchLive(EOILiveSearchInputs inputs)
         {
             EOILiveSearchResponse liveSearchResponse = new EOILiveSearchResponse(EOIValidation.ValidateLiveSearchInputs(inputs));
 
             if (liveSearchResponse.Success)
             {
-                string endPoint = $"{baseUrl}{liveSearchPath}";
+                string endPoint = $"{baseUrl}{searchLivePath}";
 
                 try
                 {
@@ -553,36 +552,6 @@ namespace EyesOnItSDK
             }
 
             return cancelLiveSearchResponse;
-        }
-
-        public async Task<EOISearchResponse> SimilaritySearch(EOISimilaritySearchInputs inputs)
-        {
-            EOISearchResponse searchResponse = new EOISearchResponse(EOIValidation.ValidateSimilaritySearchInputs(inputs));
-
-            if (searchResponse.Success)
-            {
-                string endPoint = $"{baseUrl}{similaritySearchPath}";
-
-                try
-                {
-                    var options = new JsonSerializerOptions
-                    {
-                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                    };
-
-                    var jsonData = JsonSerializer.Serialize(inputs, options);
-
-                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                    searchResponse = new EOISearchResponse(eoiMessage);
-                }
-                catch (HttpRequestException exc)
-                {
-                    Log.Error($"Search: Exception: {exc.Message}");
-                    searchResponse = new EOISearchResponse(false, exc.Message);
-                }
-            }
-
-            return searchResponse;
         }
 
         public async Task<EOIGetFacerecGroupsResponse> GetFacerecGroups()
