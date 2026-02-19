@@ -24,7 +24,7 @@ namespace EyesOnItSDK.SocketIO
         public event StreamDetectionHandler OnStreamDetection;
         public event PerformanceUpdateHandler OnPerformanceUpdate;
         public event LiveSearchDetectionHandler OnLiveSearchDetection;
-        //public event CountUpdateHandler OnCountUpdate;
+        public event CountUpdateHandler OnCountUpdate;
         public event SubscribedHandler OnSubscribed;
         public event ConnectedHandler OnConnected;
 

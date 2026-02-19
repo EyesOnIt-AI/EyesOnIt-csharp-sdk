@@ -1,7 +1,11 @@
-﻿using EyesOnItSDK.Data.Elements;
+﻿using EyesOnItSDK;
+using EyesOnItSDK.Data.Elements;
+using EyesOnItSDK.Data.Inputs;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Metrics;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace EyesOnItSDK.Data.Inputs
 {
@@ -26,6 +30,8 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MIN_CAMERA_UUID_LENGTH = 10;
         private static int MIN_MOTION_THRESHOLD = 10;
         private static int MIN_SEARCH_QUERY_LENGTH = 2;
+        private static int MIN_SEED_ID_LENGTH = 10;
+        private static int MIN_SEARCH_IMAGE_LENGTH = 100;
         private static int MIN_FACEREC_GROUP_NAME_LENGTH = 2;
         private static int MIN_FACEREC_PERSON_NAME_LENGTH = 2;
         private static int MIN_FACEREC_GROUP_ID_LENGTH = 2;
@@ -33,6 +39,8 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MIN_FACEREC_GROUP_DESCRIPTION_LENGTH = 10;
         private static int MIN_FACEREC_FILE_PATH_LENGTH = 5;
         private static int MIN_FACEREC_IMAGE_BASE64_LENGTH = 20;
+        private static string MIN_SEARCH_DATE_ISO = "2020-01-01T00:00:00Z";
+        private static DateTime MIN_SEARCH_DATE = DateTime.Parse(MIN_SEARCH_DATE_ISO);
 
 
         public static EOIResponse ValidateProcessImageInputs(EOIProcessImageInputs inputs)
@@ -154,30 +162,61 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
-        public static EOIResponse ValidateSearchInputs(EOISearchInputs inputs)
+        public static EOIResponse ValidateSearchInputs(EOIArchiveSearchInputs inputs)
         {
-            EOIResponse response = EOIResponse.DefaultSuccess();
+            EOIResponse response = inputs == null ?
+                new EOIResponse(false, "Search request must include inputs")
+                : EOIResponse.DefaultSuccess();
 
-            if (inputs == null)
+            if (response.Success)
             {
-                response = new EOIResponse(false, "inputs = null. Search request must include inputs");
-            }
-            else
-            {
+                var trimmedObjectDescription = inputs.ObjectDescription?.Trim();
+                var trimmedPersonId = inputs.FacePersonId?.Trim();
+                var trimmedGroupId = inputs.FaceGroupId?.Trim();
+                var trimmedSeedId = inputs.SeedId?.Trim();
+
                 if (inputs.ClassName == null || !VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
                 {
                     response = new EOIResponse(false, $"In search inputs, class name is not valid. Class name is {inputs.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
                 }
 
-                if (response.Success)
+                if (response.Success && trimmedObjectDescription != null && trimmedObjectDescription.Length < MIN_SEARCH_QUERY_LENGTH)
                 {
-                    var trimmedSearch = inputs.ObjectDescription == null ? null : inputs.ObjectDescription.Trim();
-
-                    if (trimmedSearch == null || trimmedSearch.Length < MIN_SEARCH_QUERY_LENGTH)
-                    {
-                        response = new EOIResponse(false, $"Search object description must be at {MIN_SEARCH_QUERY_LENGTH} characters. Object description is '{inputs.ObjectDescription}'");
-                    }
+                    response = new EOIResponse(false, $"Search object description must be at {MIN_SEARCH_QUERY_LENGTH} characters. Object description is '{trimmedObjectDescription}'");
                 }
+
+                if (response.Success && trimmedPersonId != null && trimmedPersonId.Length < MIN_SEARCH_QUERY_LENGTH)
+                {
+                    response = new EOIResponse(false, $"Search person ID must be at {MIN_SEARCH_QUERY_LENGTH} characters. Person ID is '{trimmedPersonId}'");
+                }
+
+                if (response.Success && trimmedGroupId != null && trimmedGroupId.Length < MIN_SEARCH_QUERY_LENGTH)
+                {
+                    response = new EOIResponse(false, $"Search group ID must be at {MIN_SEARCH_QUERY_LENGTH} characters. Group ID is '{trimmedGroupId}'");
+                }
+
+                if (response.Success && trimmedSeedId != null && trimmedSeedId.Length < MIN_SEED_ID_LENGTH)
+                {
+                    response = new EOIResponse(false, $"Search seed ID must be at {MIN_SEED_ID_LENGTH} characters. Seed ID is '{trimmedSeedId}'");
+                }
+
+                if (response.Success && inputs.Image != null && inputs.Image.Length < MIN_SEARCH_IMAGE_LENGTH)
+                {
+                    response = new EOIResponse(false, "Please provide a valid base64 image string");
+                }
+
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateArchiveSearchInputs(EOIArchiveSearchInputs inputs)
+        {
+            EOIResponse response = ValidateSearchInputs(inputs);
+
+            if (response.Success)
+            {
+                response = ValidateSearchDateRange(inputs.StartDateTime, inputs.EndDateTime);
             }
 
             return response;
@@ -193,34 +232,9 @@ namespace EyesOnItSDK.Data.Inputs
             }
             else
             {
-                if (inputs.ClassName == null || !VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
-                {
-                    response = new EOIResponse(false, $"In search inputs, class name is not valid. Class name is {inputs.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
-                }
-
-                if (response.Success)
-                {
-                    var trimmedSearch = inputs.ObjectDescription?.Trim();
-
-                    if (trimmedSearch == null || trimmedSearch.Length < MIN_SEARCH_QUERY_LENGTH)
-                    {
-                        response = new EOIResponse(false, $"Search object description must be at {MIN_SEARCH_QUERY_LENGTH} characters. Object description is '{inputs.ObjectDescription}'");
-                    }
-                }
-
-                if (response.Success)
-                {
-                    response = inputs.AlertThreshold == null || (inputs.AlertThreshold >= 0 && inputs.AlertThreshold < 100) ?
+                response = inputs.DurationSeconds == null || inputs.DurationSeconds >= 0 ?
                         EOIResponse.DefaultSuccess() :
-                        new EOIResponse(false, $"If specified, live search alert threshold must be between 0 and 99. Value is {inputs.AlertThreshold}.");
-                }
-
-                if (response.Success)
-                {
-                    response = inputs.DurationSeconds == null || inputs.DurationSeconds >= 0 ?
-                        EOIResponse.DefaultSuccess() :
-                        new EOIResponse(false, $"live search duration must be greater than 0. Value is {inputs.DurationSeconds}");
-                }
+                        new EOIResponse(false, $"Live search duration must be greater than 0. Value is {inputs.DurationSeconds}");
             }
 
             return response;
@@ -244,24 +258,6 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
-        public static EOIResponse ValidateSimilaritySearchInputs(EOISimilaritySearchInputs inputs)
-        {
-            EOIResponse response = EOIResponse.DefaultSuccess();
-
-            if (inputs == null)
-            {
-                response = new EOIResponse(false, "inputs = null. Similarity search request must include inputs");
-            }
-            else
-            {
-                if (inputs.ReferenceImageId == null || inputs.ReferenceImageId.Length < 18)
-                {
-                    response = new EOIResponse(false, $"In similarity search inputs, ReferenceImageId is not valid. ReferenceImageId is {inputs.ReferenceImageId}. Valid ReferenceImageId values will come from a previous search result and will be at least 18 characters.");
-                }
-            }
-
-            return response;
-        }
         private static EOIResponse ValidateBaseInputs(
             EOIBaseInputs inputs,
             EOILine[] lines,
@@ -991,5 +987,56 @@ namespace EyesOnItSDK.Data.Inputs
 
             return response;
         }
+
+
+        private static EOIResponse ValidateSearchDateRange(string startDateTime, string endDateTime)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            string startDateText = startDateTime == null ? null : startDateTime.Trim();
+            string endDateText = endDateTime == null ? null : endDateTime.Trim();
+
+            bool startProvided = startDateText != null && startDateText.Length > 0;
+            bool endProvided = endDateText != null && endDateText.Length > 0;
+
+            DateTime? startDate = null;
+            DateTime? endDate = null;
+
+            if (startProvided) 
+            {
+                if (!DateTime.TryParse(startDateText, out DateTime parsedDate))
+                {
+                    startDate = parsedDate;
+                    response = new EOIResponse(false, $"Start datetime must be a valid datetime. Start = {startDateText}");
+                }
+
+                if (response.Success && (startDate < MIN_SEARCH_DATE))
+                {
+                    response = new EOIResponse(false, $"Start datetime must be on or after {MIN_SEARCH_DATE_ISO}. Start = {startDateText}");   
+                }
+            }
+
+            if (response.Success && endProvided)
+            {
+                if (!DateTime.TryParse(endDateText, out DateTime parsedDate))
+                {
+                    endDate = parsedDate;
+                    response = new EOIResponse(false, $"End datetime must be a valid datetime. End = {endDateText}");
+                }
+
+                if (response.Success && (endDate < MIN_SEARCH_DATE))
+                {
+                    response = new EOIResponse(false, $"End datetime must be on or after {MIN_SEARCH_DATE_ISO}. End = {endDateText}");
+                }
+            }
+
+            if (response.Success && startDate != null && endDate != null && startDate >= endDate)
+            {
+                response = new EOIResponse(false, $"Start datetime must be before end datetime. Start = {startDateText}; End = {endDateText}");
+            }
+
+            return response;
+        }
     }
+
 }
