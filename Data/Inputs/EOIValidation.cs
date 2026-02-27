@@ -16,11 +16,13 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MIN_PHONE_NUMBER_LENGTH = 10;
         private static int MAX_PHONE_NUMBER_LENGTH = 20;
         private static int MIN_PROMPT_LENGTH = 1;
-        private static int MIN_PROMPT_THRESHOLD = 1;
-        private static int MAX_PROMPT_THRESHOLD = 99;
+        private static int MIN_CONFIDENCE_THRESHOLD = 1;
+        private static int MAX_CONFIDENCE_THRESHOLD = 99;
         private static int MIN_FRAME_RATE = 1;
         private static int MIN_LINE_VERTEX_COUNT = 2;
         private static string[] VALID_CLASS_NAMES = { "person", "vehicle", "bag", "animal", "face", "unknown" };
+        private static string[] VALID_DETECTION_TYPE_NAMES = { "class_name", "natural_language", "face_recognition", "similarity" };
+        private static string[] VALID_FACE_REC_MATCH_TYPE_NAMES = { "person", "group" };
         private static string[] COUNT_CONDITION_TYPES = { "count_equals", "count_greater_than", "count_less_than" };
         private static string[] LINE_CROSS_CONDITION_TYPES = { "line_cross" };
         private static int MIN_LINE_NAME_LENGTH = 3;
@@ -31,7 +33,7 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MIN_MOTION_THRESHOLD = 10;
         private static int MIN_SEARCH_QUERY_LENGTH = 2;
         private static int MIN_SEED_ID_LENGTH = 10;
-        private static int MIN_SEARCH_IMAGE_LENGTH = 100;
+        private static int MIN_IMAGE_LENGTH = 100;
         private static int MIN_FACEREC_GROUP_NAME_LENGTH = 2;
         private static int MIN_FACEREC_PERSON_NAME_LENGTH = 2;
         private static int MIN_FACEREC_GROUP_ID_LENGTH = 2;
@@ -161,8 +163,7 @@ namespace EyesOnItSDK.Data.Inputs
 
             return response;
         }
-
-        public static EOIResponse ValidateSearchInputs(EOIArchiveSearchInputs inputs)
+        public static EOIResponse ValidateSearchInputs(EOISearchInputs inputs)
         {
             EOIResponse response = inputs == null ?
                 new EOIResponse(false, "Search request must include inputs")
@@ -170,41 +171,21 @@ namespace EyesOnItSDK.Data.Inputs
 
             if (response.Success)
             {
-                var trimmedObjectDescription = inputs.ObjectDescription?.Trim();
-                var trimmedPersonId = inputs.FacePersonId?.Trim();
-                var trimmedGroupId = inputs.FaceGroupId?.Trim();
-                var trimmedSeedId = inputs.SeedId?.Trim();
+                string trimmedObjectDescription = inputs.ObjectDescription?.Trim();
+                string trimmedPersonId = inputs.FacePersonId?.Trim();
+                string trimmedGroupId = inputs.FaceGroupId?.Trim();
+                string trimmedSeedId = inputs.SeedId?.Trim();
 
-                if (inputs.ClassName == null || !VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
+                bool objDescValid = trimmedObjectDescription != null && trimmedObjectDescription.Length >= EOIValidation.MIN_SEARCH_QUERY_LENGTH;
+                bool personIdValid = trimmedPersonId != null && trimmedPersonId.Length >= EOIValidation.MIN_SEARCH_QUERY_LENGTH;
+                bool groupIdValid = trimmedGroupId != null && trimmedGroupId.Length >= EOIValidation.MIN_SEARCH_QUERY_LENGTH;
+                bool seedIdValid = trimmedSeedId != null && trimmedSeedId.Length >= EOIValidation.MIN_SEED_ID_LENGTH;
+                bool imageValid = inputs.Image != null && inputs.Image.Length >= EOIValidation.MIN_IMAGE_LENGTH;
+
+                if (!objDescValid && !personIdValid && !groupIdValid && !seedIdValid && !imageValid)
                 {
-                    response = new EOIResponse(false, $"In search inputs, class name is not valid. Class name is {inputs.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
+                    response = new EOIResponse(false, "Search must include one of the following: object description, person, group, seed image id or image");
                 }
-
-                if (response.Success && trimmedObjectDescription != null && trimmedObjectDescription.Length < MIN_SEARCH_QUERY_LENGTH)
-                {
-                    response = new EOIResponse(false, $"Search object description must be at {MIN_SEARCH_QUERY_LENGTH} characters. Object description is '{trimmedObjectDescription}'");
-                }
-
-                if (response.Success && trimmedPersonId != null && trimmedPersonId.Length < MIN_SEARCH_QUERY_LENGTH)
-                {
-                    response = new EOIResponse(false, $"Search person ID must be at {MIN_SEARCH_QUERY_LENGTH} characters. Person ID is '{trimmedPersonId}'");
-                }
-
-                if (response.Success && trimmedGroupId != null && trimmedGroupId.Length < MIN_SEARCH_QUERY_LENGTH)
-                {
-                    response = new EOIResponse(false, $"Search group ID must be at {MIN_SEARCH_QUERY_LENGTH} characters. Group ID is '{trimmedGroupId}'");
-                }
-
-                if (response.Success && trimmedSeedId != null && trimmedSeedId.Length < MIN_SEED_ID_LENGTH)
-                {
-                    response = new EOIResponse(false, $"Search seed ID must be at {MIN_SEED_ID_LENGTH} characters. Seed ID is '{trimmedSeedId}'");
-                }
-
-                if (response.Success && inputs.Image != null && inputs.Image.Length < MIN_SEARCH_IMAGE_LENGTH)
-                {
-                    response = new EOIResponse(false, "Please provide a valid base64 image string");
-                }
-
             }
 
             return response;
@@ -224,17 +205,73 @@ namespace EyesOnItSDK.Data.Inputs
 
         public static EOIResponse ValidateLiveSearchInputs(EOILiveSearchInputs inputs)
         {
-            EOIResponse response = EOIResponse.DefaultSuccess();
+            EOIResponse response = ValidateSearchInputs(inputs);
 
-            if (inputs == null)
+            if (response.Success)
             {
-                response = new EOIResponse(false, "inputs = null. Live search request must include inputs");
+                if (inputs.SearchType == null || !EOIValidation.VALID_DETECTION_TYPE_NAMES.Contains(inputs.SearchType.Trim()))
+                {
+                    response = new EOIResponse(false, $"In search configuration, search type is not valid. Search type is {inputs.SearchType}");
+                }
+                else if (inputs.SearchType.Trim() == "natural_lanuage")
+                {
+                    if (inputs.ClassName != null && !EOIValidation.VALID_CLASS_NAMES.Contains(inputs.ClassName.Trim()))
+                    {
+                        response = new EOIResponse(false, $"In search configurations, class name is not valid. Class name is {inputs.ClassName}");
+                    }
+                    else
+                    {
+                        string trimmedText = inputs.ObjectDescription?.Trim();
+
+                        if (trimmedText == null || trimmedText.Length < EOIValidation.MIN_SEARCH_QUERY_LENGTH)
+                        {
+                            response = new EOIResponse(false, $"Live search text must be at least {EOIValidation.MIN_SEARCH_QUERY_LENGTH} character(s). Search text = {trimmedText}");
+                        }
+                    }
+                }
+                else if (inputs.SearchType.Trim() == "face_recognition")
+                {
+                    response = ValidateFaceRecognitionConfig(inputs.FaceMatchType, inputs.FacePersonId, inputs.FaceGroupId);
+                }
+                else if (inputs.SearchType.Trim() == "similarity")
+                {
+                    response = ValidateSimilarityConfig(inputs.Image, inputs.AlertThreshold);
+                }
             }
-            else
+
+            if (response.Success)
             {
-                response = inputs.DurationSeconds == null || inputs.DurationSeconds >= 0 ?
-                        EOIResponse.DefaultSuccess() :
-                        new EOIResponse(false, $"Live search duration must be greater than 0. Value is {inputs.DurationSeconds}");
+                if (!string.IsNullOrEmpty(inputs.SeedId) && inputs.SeedId.Length < 10)
+                {
+                    response = new EOIResponse(false, "Please provide a valid similarity search seed ID");
+                }
+            }
+
+            if (response.Success)
+            {
+                if (!string.IsNullOrEmpty(inputs.Image) && inputs.Image.Length < EOIValidation.MIN_IMAGE_LENGTH)
+                {
+                    response = new EOIResponse(false, "Please provide a valid base64 image string");
+                }
+            }
+
+            if (response.Success)
+            {
+                response = inputs.AlertThreshold > 0 && inputs.AlertThreshold < 100
+                    ? EOIResponse.DefaultSuccess()
+                    : new EOIResponse(false, $"Live search threshold must be greater than 0 and less than 100. Value is {inputs.AlertThreshold}");
+            }
+
+            if (response.Success)
+            {
+                response = inputs.DurationSeconds == null || inputs.DurationSeconds >= 0
+                    ? EOIResponse.DefaultSuccess()
+                    : new EOIResponse(false, $"Live search duration must be greater than 0. Value is {inputs.DurationSeconds}");
+            }
+
+            if (response.Success)
+            {
+                response = ValidateNotification(inputs.Notification);
             }
 
             return response;
@@ -280,8 +317,8 @@ namespace EyesOnItSDK.Data.Inputs
 
         public static EOIResponse ValidateRegions(
             EOIRegion[] regions,
-            EOILine[] lines, 
-            bool validateForVideo, 
+            EOILine[] lines,
+            bool validateForVideo,
             bool validSearchIndexInputs)
         {
             EOIResponse response = regions == null || regions.Length == 0 ?
@@ -411,37 +448,47 @@ namespace EyesOnItSDK.Data.Inputs
                 {
                     if (response.Success)
                     {
-                        if (detectionConfig.ClassName == null && detectionConfig.ObjectSize == null)
+                        if (detectionConfig.ClassName != null && detectionConfig.ClassThreshold == null)
                         {
-                            response = new EOIResponse(false, $"In detection configurations, either a class name or an object size must be specified");
+                            response = new EOIResponse(false, "In detection configurations, if a class name is specified, a class threshold must also be specified.");
                         }
-                        else if (detectionConfig.ClassName != null && detectionConfig.ClassThreshold == null)
+                        else if (detectionConfig.ObjectSize != null && detectionConfig.ObjectSize < EOIValidation.MIN_OBJECT_SIZE)
                         {
-                            response = new EOIResponse(false, $"In detection configurations, if a class name is specified, a class threshold must also be specified.");
+                            response = new EOIResponse(false, $"In detection configurations, the object size should be at least {EOIValidation.MIN_OBJECT_SIZE}. object_size = {detectionConfig.ObjectSize}");
                         }
-                        else if (detectionConfig.ClassName != null && !VALID_CLASS_NAMES.Contains(detectionConfig.ClassName.Trim()))
+                        else if (detectionConfig.DetectionType == null || !EOIValidation.VALID_DETECTION_TYPE_NAMES.Contains(detectionConfig.DetectionType.Trim()))
                         {
-                            response = new EOIResponse(false, $"In detection configurations, class name is not valid. Class name is {detectionConfig.ClassName}. See documentation at https://developer.eyesonit.us/documentation for valid class names.");
+                            response = new EOIResponse(false, $"In detection configurations, detection type is not valid. Detection type is {detectionConfig.DetectionType}");
                         }
-                        else if (detectionConfig.ObjectSize != null && detectionConfig.ObjectSize < MIN_OBJECT_SIZE)
+                        else if (detectionConfig.DetectionType.Trim() == "natural_lanuage")
                         {
-                            response = new EOIResponse(false, $"In detection configurations, the object size should be at least {MIN_OBJECT_SIZE}. ObjectSize = {detectionConfig.ObjectSize}");
+                            if (detectionConfig.ClassName != null && !EOIValidation.VALID_CLASS_NAMES.Contains(detectionConfig.ClassName.Trim()))
+                            {
+                                response = new EOIResponse(false, $"In detection configurations, class name is not valid. Class name is {detectionConfig.ClassName}");
+                            }
+                            else
+                            {
+                                response = ValidateObjectDescriptions(detectionConfig.ObjectDescriptions, validateForVideo);
+                            }
                         }
-                        else
+                        else if (detectionConfig.DetectionType.Trim() == "face_recognition")
                         {
-                            response = ValidateObjectDescriptions(detectionConfig.ObjectDescriptions, validateForVideo);
+                            response = ValidateFaceRecognitionConfig(detectionConfig.FaceRecognition.MatchType, detectionConfig.FaceRecognition.Person, detectionConfig.FaceRecognition.Group);
+                        }
+                        else if (detectionConfig.DetectionType.Trim() == "similarity")
+                        {
+                            response = ValidateSimilarityConfig(detectionConfig.Similarity.Image, detectionConfig.Similarity.MatchThreshold);
                         }
 
                         if (response.Success && validateForVideo)
                         {
-                            if (detectionConfig.AlertSeconds < MIN_ALERT_SECONDS)
+                            if (detectionConfig.AlertSeconds < EOIValidation.MIN_ALERT_SECONDS)
                             {
-                                Console.WriteLine($"AlertSeconds: {detectionConfig.AlertSeconds}, MIN_ALERT_SECONDS: {MIN_ALERT_SECONDS}");
-                                response = new EOIResponse(false, $"In detection configurations, alert seconds must be at least {MIN_ALERT_SECONDS}. AlertSeconds = {detectionConfig.AlertSeconds}");
+                                response = new EOIResponse(false, $"In detection configurations, alert seconds must be at least {EOIValidation.MIN_ALERT_SECONDS}. alert_seconds = {detectionConfig.AlertSeconds}");
                             }
-                            else if (detectionConfig.ResetSeconds < MIN_RESET_SECONDS)
+                            else if (detectionConfig.ResetSeconds < EOIValidation.MIN_RESET_SECONDS)
                             {
-                                response = new EOIResponse(false, $"In detection configurations, reset seconds must be at least {MIN_RESET_SECONDS}. ResetSeconds = {detectionConfig.ResetSeconds}");
+                                response = new EOIResponse(false, $"In detection configurations, reset seconds must be at least {EOIValidation.MIN_RESET_SECONDS}. reset_seconds = {detectionConfig.ResetSeconds}");
                             }
                             else
                             {
@@ -491,9 +538,9 @@ namespace EyesOnItSDK.Data.Inputs
 
                         if (response.Success && objectDescription.Alert == true && validateForVideo)
                         {
-                            if (objectDescription.Threshold < EOIValidation.MIN_PROMPT_THRESHOLD || objectDescription.Threshold > EOIValidation.MAX_PROMPT_THRESHOLD)
+                            if (objectDescription.Threshold < EOIValidation.MIN_CONFIDENCE_THRESHOLD || objectDescription.Threshold > EOIValidation.MAX_CONFIDENCE_THRESHOLD)
                             {
-                                response = new EOIResponse(false, $"The object description alerting threshold must be between {EOIValidation.MIN_PROMPT_THRESHOLD} and {EOIValidation.MAX_PROMPT_THRESHOLD}. The value for object description '{objectDescription.Text}' is ${objectDescription.Threshold}");
+                                response = new EOIResponse(false, $"The object description alerting threshold must be between {EOIValidation.MIN_CONFIDENCE_THRESHOLD} and {EOIValidation.MAX_CONFIDENCE_THRESHOLD}. The value for object description '{objectDescription.Text}' is ${objectDescription.Threshold}");
                             }
                         }
                     }
@@ -668,9 +715,9 @@ namespace EyesOnItSDK.Data.Inputs
 
                         if (validateThresholds)
                         {
-                            if (objectDescription.Threshold < EOIValidation.MIN_PROMPT_THRESHOLD || objectDescription.Threshold > EOIValidation.MAX_PROMPT_THRESHOLD)
+                            if (objectDescription.Threshold < EOIValidation.MIN_CONFIDENCE_THRESHOLD || objectDescription.Threshold > EOIValidation.MAX_CONFIDENCE_THRESHOLD)
                             {
-                                response = new EOIResponse(false, $"The object description alerting threshold must be between {EOIValidation.MIN_PROMPT_THRESHOLD} and {EOIValidation.MAX_PROMPT_THRESHOLD}. The value for object description '{objectDescription.Text}' is ${objectDescription.Threshold}");
+                                response = new EOIResponse(false, $"The object description alerting threshold must be between {EOIValidation.MIN_CONFIDENCE_THRESHOLD} and {EOIValidation.MAX_CONFIDENCE_THRESHOLD}. The value for object description '{objectDescription.Text}' is ${objectDescription.Threshold}");
                             }
                         }
                     }
@@ -784,7 +831,7 @@ namespace EyesOnItSDK.Data.Inputs
                 var trimmedGroupId = inputs.GroupId?.Trim();
                 if (trimmedGroupId == null || trimmedGroupId.Length < MIN_FACEREC_GROUP_ID_LENGTH)
                 {
-                    response = new EOIResponse(false,$"The group ID {trimmedGroupId} must be at least {MIN_FACEREC_GROUP_ID_LENGTH} character(s)");
+                    response = new EOIResponse(false, $"The group ID {trimmedGroupId} must be at least {MIN_FACEREC_GROUP_ID_LENGTH} character(s)");
                 }
             }
 
@@ -856,7 +903,7 @@ namespace EyesOnItSDK.Data.Inputs
 
                 if (inputs.PersonImages != null && inputs.PersonImages.Count() > 0)
                 {
-                    foreach (var personImage in inputs.PersonImages) 
+                    foreach (var personImage in inputs.PersonImages)
                     {
                         if (response.Success)
                         {
@@ -1002,7 +1049,7 @@ namespace EyesOnItSDK.Data.Inputs
             DateTime? startDate = null;
             DateTime? endDate = null;
 
-            if (startProvided) 
+            if (startProvided)
             {
                 if (!DateTime.TryParse(startDateText, out DateTime parsedDate))
                 {
@@ -1012,7 +1059,7 @@ namespace EyesOnItSDK.Data.Inputs
 
                 if (response.Success && (startDate < MIN_SEARCH_DATE))
                 {
-                    response = new EOIResponse(false, $"Start datetime must be on or after {MIN_SEARCH_DATE_ISO}. Start = {startDateText}");   
+                    response = new EOIResponse(false, $"Start datetime must be on or after {MIN_SEARCH_DATE_ISO}. Start = {startDateText}");
                 }
             }
 
@@ -1033,6 +1080,65 @@ namespace EyesOnItSDK.Data.Inputs
             if (response.Success && startDate != null && endDate != null && startDate >= endDate)
             {
                 response = new EOIResponse(false, $"Start datetime must be before end datetime. Start = {startDateText}; End = {endDateText}");
+            }
+
+            return response;
+        }
+        public static EOIResponse ValidateFaceRecognitionConfig(string matchType, string personId, string groupId = null)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            // validate match type
+            if (response.Success)
+            {
+                if (matchType != null)
+                {
+                    matchType = matchType.Trim().ToLower();
+                }
+
+                if (matchType == null || !EOIValidation.VALID_FACE_REC_MATCH_TYPE_NAMES.Contains(matchType))
+                {
+                    response = new EOIResponse(false, $"Invalid face recognition match type. Value is {matchType}");
+                }
+
+                // validate person / group match params
+                if (response.Success)
+                {
+                    if (matchType == "person")
+                    {
+                        if (string.IsNullOrEmpty(personId) || personId.Length < EOIValidation.MIN_FACEREC_PERSON_ID_LENGTH)
+                        {
+                            response = new EOIResponse(false, $"Invalid face recognition person id. Value is {personId}");
+                        }
+                    }
+                    else if (matchType == "group")
+                    {
+                        if (string.IsNullOrEmpty(groupId) || groupId.Length < EOIValidation.MIN_FACEREC_GROUP_ID_LENGTH)
+                        {
+                            response = new EOIResponse(false, $"Invalid face recognition group id. Value is {groupId}");
+                        }
+                    }
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateSimilarityConfig(string image, double? matchThreshold)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            // validate match type
+            if (response.Success)
+            {
+                if (string.IsNullOrEmpty(image) || image.Length < EOIValidation.MIN_IMAGE_LENGTH)
+                {
+                    response = new EOIResponse(false, "Invalid similarity image. Please provide a valid base64 image string");
+                }
+                else if (matchThreshold != null || matchThreshold < EOIValidation.MIN_CONFIDENCE_THRESHOLD || matchThreshold > EOIValidation.MAX_CONFIDENCE_THRESHOLD)
+                {
+                    response = new EOIResponse(false, $"Invalid similarity match threshold. Value must be between {EOIValidation.MIN_CONFIDENCE_THRESHOLD} and {EOIValidation.MAX_CONFIDENCE_THRESHOLD}. Value is {matchThreshold}");
+                }
             }
 
             return response;

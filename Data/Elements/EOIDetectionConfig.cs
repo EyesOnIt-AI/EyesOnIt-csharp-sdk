@@ -14,6 +14,9 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("object_size")]
         public int? ObjectSize { get; set; }
 
+        [JsonPropertyName("detection_type")]
+        public string DetectionType { get; set; }
+
         [JsonPropertyName("object_descriptions")]
         public EOIObjectDescription[] ObjectDescriptions { get; set; }
 
@@ -27,7 +30,10 @@ namespace EyesOnItSDK.Data.Elements
         public float ResetSeconds { get; set; }
 
         [JsonPropertyName("face_recognition")]
-        public EOIFaceRecognitionConfig FaceRecognitionConfig { get; set; }
+        public EOIFaceRecognitionConfig FaceRecognition { get; set; }
+
+        [JsonPropertyName("similarity")]
+        public EOISimilarityConfig Similarity { get; set; }
 
 
         // VMS Properties
