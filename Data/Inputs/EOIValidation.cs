@@ -380,10 +380,6 @@ namespace EyesOnItSDK.Data.Inputs
                     {
                         response = new EOIResponse(false, $"motion detection regular check interval should be at least 1. RegularCheckFrameInterval = {motionDetection.RegularCheckFrameInterval}");
                     }
-                    else if (motionDetection.BackupCheckFrameInterval < 1)
-                    {
-                        response = new EOIResponse(false, $"motion detection backup check interval should be at least 1. PeriodicCheckSeconds = {motionDetection.BackupCheckFrameInterval}");
-                    }
                 }
             }
 
