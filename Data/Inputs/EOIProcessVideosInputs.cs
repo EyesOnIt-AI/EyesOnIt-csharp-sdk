@@ -15,6 +15,9 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("real_time")]
         public bool RealTime { get; set; }
 
+        [JsonPropertyName("video_start_interval")]
+        public int VideoStartInterval { get; set; }
+
         [JsonPropertyName("output_all_frames")]
         public bool OutputAllFrames { get; set; }
 
