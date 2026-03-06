@@ -1,7 +1,11 @@
-﻿// SocketClient.cs
+// SocketClient.cs
 using Serilog;
 using SocketIOClient;
-using System.Text.Json;
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace EyesOnItSDK.SocketIO
@@ -10,7 +14,10 @@ namespace EyesOnItSDK.SocketIO
     {
         private readonly string url;
         private readonly SocketIOOptions options;
+        private readonly object syncRoot = new object();
+        private static int systemTextJsonResolverInitialized;
         private SocketIOClient.SocketIO socket;
+        private bool handlersRegistered;
 
         public delegate void StreamUpdateHandler(StreamUpdateData[] payload);
         public delegate void StreamDetectionHandler(StreamDetectionsData payload);
@@ -36,55 +43,74 @@ namespace EyesOnItSDK.SocketIO
 
         public async Task ConnectAsync()
         {
-            if (socket == null)
+            EnsureSystemTextJsonAssemblyResolver();
+
+            SocketIOClient.SocketIO currentSocket;
+            lock (syncRoot)
             {
-                socket = new SocketIOClient.SocketIO(url, options);
-                RegisterEventHandlers();
+                if (socket == null)
+                {
+                    socket = new SocketIOClient.SocketIO(url, options);
+                }
+
+                if (!handlersRegistered)
+                {
+                    RegisterEventHandlers();
+                    RegisterLifecycleHandlers();
+                    handlersRegistered = true;
+                }
+
+                currentSocket = socket;
             }
 
-            socket.OnConnected += (sender, args) =>
+            if (!currentSocket.Connected)
             {
-                Log.Debug($"SocketIOClient: Connected to server");
-                OnConnected?.Invoke();
-            };
-
-            socket.OnError += (sender, message) => Log.Error($"SocketIOClient: Error: {message}");
-            socket.OnDisconnected += (sender, reason) => Log.Warning($"SocketIOClient: Disconnected: {reason}");
-
-            socket.OnAny((eventName, response) =>
-            {
-                Log.Debug($"SocketIOClient: Event: {eventName}, Data: {response}");
-            });
-
-            if (!socket.Connected)
-            {
-                await socket.ConnectAsync();
+                await currentSocket.ConnectAsync().ConfigureAwait(false);
             }
         }
 
         public async Task DisconnectAsync()
         {
-            Log.Debug($"SocketIOClient: Disconnected from server");
+            Log.Debug("SocketIOClient: Disconnected from server");
 
-            if (socket != null && socket.Connected)
+            var currentSocket = socket;
+            if (currentSocket != null && currentSocket.Connected)
             {
-                await socket.DisconnectAsync();
+                await currentSocket.DisconnectAsync().ConfigureAwait(false);
             }
         }
 
         public async Task JoinRoomAsync(string room)
         {
-            await socket.EmitAsync("subscribe", room);
+            if (string.IsNullOrWhiteSpace(room))
+            {
+                return;
+            }
+
+            var currentSocket = EnsureConnectedSocket();
+            await currentSocket.EmitAsync("subscribe", room).ConfigureAwait(false);
         }
 
         public async Task LeaveRoomAsync(string room)
         {
-            await socket.EmitAsync("unsubscribe", room);
+            if (string.IsNullOrWhiteSpace(room))
+            {
+                return;
+            }
+
+            var currentSocket = EnsureConnectedSocket();
+            await currentSocket.EmitAsync("unsubscribe", room).ConfigureAwait(false);
         }
 
         public async Task EmitAsync(string eventName, params object[] args)
         {
-            await socket.EmitAsync(eventName, args);
+            if (string.IsNullOrWhiteSpace(eventName))
+            {
+                return;
+            }
+
+            var currentSocket = EnsureConnectedSocket();
+            await currentSocket.EmitAsync(eventName, args).ConfigureAwait(false);
         }
 
         public bool IsConnected()
@@ -92,46 +118,180 @@ namespace EyesOnItSDK.SocketIO
             return socket?.Connected ?? false;
         }
 
+        private SocketIOClient.SocketIO EnsureConnectedSocket()
+        {
+            if (socket == null || !socket.Connected)
+            {
+                throw new InvalidOperationException("Socket.IO client is not connected.");
+            }
+
+            return socket;
+        }
+
+        private static void EnsureSystemTextJsonAssemblyResolver()
+        {
+            if (Interlocked.Exchange(ref systemTextJsonResolverInitialized, 1) == 1)
+            {
+                return;
+            }
+
+            AppDomain.CurrentDomain.AssemblyResolve += ResolveSystemTextJsonAssembly;
+        }
+
+        private static Assembly ResolveSystemTextJsonAssembly(object sender, ResolveEventArgs args)
+        {
+            AssemblyName requestedAssemblyName;
+            try
+            {
+                requestedAssemblyName = new AssemblyName(args.Name);
+            }
+            catch
+            {
+                return null;
+            }
+
+            if (!string.Equals(requestedAssemblyName.Name, "System.Text.Json", StringComparison.OrdinalIgnoreCase))
+            {
+                return null;
+            }
+
+            var alreadyLoaded = AppDomain.CurrentDomain.GetAssemblies()
+                .FirstOrDefault(assembly =>
+                {
+                    try
+                    {
+                        return string.Equals(assembly.GetName().Name, "System.Text.Json", StringComparison.OrdinalIgnoreCase);
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                });
+            if (alreadyLoaded != null)
+            {
+                return alreadyLoaded;
+            }
+
+            var sdkDirectory = Path.GetDirectoryName(typeof(SocketClient).Assembly.Location);
+            var candidatePaths = new[]
+            {
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "System.Text.Json.dll"),
+                string.IsNullOrWhiteSpace(sdkDirectory) ? null : Path.Combine(sdkDirectory, "System.Text.Json.dll")
+            }
+            .Where(path => !string.IsNullOrWhiteSpace(path))
+            .Distinct(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var candidatePath in candidatePaths)
+            {
+                try
+                {
+                    if (!File.Exists(candidatePath))
+                    {
+                        continue;
+                    }
+
+                    var candidateAssemblyName = AssemblyName.GetAssemblyName(candidatePath);
+                    if (!string.Equals(candidateAssemblyName.Name, "System.Text.Json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    return Assembly.LoadFrom(candidatePath);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "SocketIOClient: Failed loading System.Text.Json from {CandidatePath}", candidatePath);
+                }
+            }
+
+            return null;
+        }
+
+        private void RegisterLifecycleHandlers()
+        {
+            socket.OnConnected += (sender, args) =>
+            {
+                Log.Debug("SocketIOClient: Connected to server");
+
+                try
+                {
+                    OnConnected?.Invoke();
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: OnConnected handler failed");
+                }
+            };
+
+            socket.OnError += (sender, message) => Log.Error($"SocketIOClient: Error: {message}");
+            socket.OnDisconnected += (sender, reason) => Log.Warning($"SocketIOClient: Disconnected: {reason}");
+            socket.OnAny((eventName, response) => Log.Debug($"SocketIOClient: Event: {eventName}, Data: {response}"));
+        }
+
         private void RegisterEventHandlers()
         {
             socket.On("stream_update", response =>
             {
-                Log.Debug($"SocketIOClient: stream_update message received");
+                try
+                {
+                    Log.Debug("SocketIOClient: stream_update message received");
 
-                JsonElement jsonElement = response.GetValue<JsonElement>(0);
-                StreamUpdateData[] payload = JsonSerializer.Deserialize<StreamUpdateData[]>(jsonElement);
+                    StreamUpdateData[] payload = response.GetValue<StreamUpdateData[]>(0);
 
-                OnStreamUpdate?.Invoke(payload);
+                    OnStreamUpdate?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle stream_update");
+                }
             });
 
             socket.On("stream_detection", response =>
             {
-                Log.Debug($"SocketIOClient: stream_detection message received");
+                try
+                {
+                    Log.Debug("SocketIOClient: stream_detection message received");
 
-                JsonElement jsonElement = response.GetValue<JsonElement>(0);
-                StreamDetectionsData payload = JsonSerializer.Deserialize<StreamDetectionsData>(jsonElement);
+                    StreamDetectionsData payload = response.GetValue<StreamDetectionsData>(0);
 
-                OnStreamDetection?.Invoke(payload);
+                    OnStreamDetection?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle stream_detection");
+                }
             });
 
             socket.On("performance_update", response =>
             {
-                Log.Debug($"SocketIOClient: performance_update message received");
+                try
+                {
+                    Log.Debug("SocketIOClient: performance_update message received");
 
-                JsonElement jsonElement = response.GetValue<JsonElement>(0);
-                PerformanceUpdateDataWrapper payload = JsonSerializer.Deserialize<PerformanceUpdateDataWrapper>(jsonElement);
+                    PerformanceUpdateDataWrapper payload = response.GetValue<PerformanceUpdateDataWrapper>(0);
 
-                OnPerformanceUpdate?.Invoke(payload);
+                    OnPerformanceUpdate?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle performance_update");
+                }
             });
 
             socket.On("live_search_detection", response =>
             {
-                Log.Debug($"SocketIOClient: live_search_detection message received");
+                try
+                {
+                    Log.Debug("SocketIOClient: live_search_detection message received");
 
-                JsonElement jsonElement = response.GetValue<JsonElement>(0);
-                StreamDetectionsData payload = JsonSerializer.Deserialize<StreamDetectionsData>(jsonElement);
+                    StreamDetectionsData payload = response.GetValue<StreamDetectionsData>(0);
 
-                OnLiveSearchDetection?.Invoke(payload);
+                    OnLiveSearchDetection?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle live_search_detection");
+                }
             });
 
             //socket.On("count_update", response =>
@@ -144,12 +304,18 @@ namespace EyesOnItSDK.SocketIO
 
             socket.On("subscribed", response =>
             {
-                Log.Debug($"SocketIOClient: subscribed message received");
+                try
+                {
+                    Log.Debug("SocketIOClient: subscribed message received");
 
-                JsonElement jsonElement = response.GetValue<JsonElement>(0);
-                SubscribedData payload = JsonSerializer.Deserialize<SubscribedData>(jsonElement);
+                    SubscribedData payload = response.GetValue<SubscribedData>(0);
 
-                OnSubscribed?.Invoke(payload);
+                    OnSubscribed?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle subscribed");
+                }
             });
         }
     }

@@ -11,7 +11,7 @@ namespace EyesOnItSDK.Data.Elements
         public EOIGenetecNotification GenetecNotification { get; set; }
 
         [JsonPropertyName("rest_url")]
-        public string RESTUrl { get; set; }
+        public string RESTUrl { get; set; } 
 
         [JsonPropertyName("include_image")]
         public bool IncludeImage { get; set; }
