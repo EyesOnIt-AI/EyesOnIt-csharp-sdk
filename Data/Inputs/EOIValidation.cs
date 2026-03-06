@@ -1131,7 +1131,7 @@ namespace EyesOnItSDK.Data.Inputs
                 {
                     response = new EOIResponse(false, "Invalid similarity image. Please provide a valid base64 image string");
                 }
-                else if (matchThreshold != null || matchThreshold < EOIValidation.MIN_CONFIDENCE_THRESHOLD || matchThreshold > EOIValidation.MAX_CONFIDENCE_THRESHOLD)
+                else if (matchThreshold == null || matchThreshold < EOIValidation.MIN_CONFIDENCE_THRESHOLD || matchThreshold > EOIValidation.MAX_CONFIDENCE_THRESHOLD)
                 {
                     response = new EOIResponse(false, $"Invalid similarity match threshold. Value must be between {EOIValidation.MIN_CONFIDENCE_THRESHOLD} and {EOIValidation.MAX_CONFIDENCE_THRESHOLD}. Value is {matchThreshold}");
                 }

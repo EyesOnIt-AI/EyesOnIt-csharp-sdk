@@ -22,6 +22,7 @@ namespace EyesOnItSDK.SocketIO
         public delegate void StreamUpdateHandler(StreamUpdateData[] payload);
         public delegate void StreamDetectionHandler(StreamDetectionsData payload);
         public delegate void PerformanceUpdateHandler(PerformanceUpdateDataWrapper payload);
+        public delegate void LiveSearchUpdateHandler(LiveSearchUpdateData[] payload);
         public delegate void LiveSearchDetectionHandler(StreamDetectionsData payload);
         public delegate void CountUpdateHandler(object payload);
         public delegate void SubscribedHandler(SubscribedData payload);
@@ -30,6 +31,7 @@ namespace EyesOnItSDK.SocketIO
         public event StreamUpdateHandler OnStreamUpdate;
         public event StreamDetectionHandler OnStreamDetection;
         public event PerformanceUpdateHandler OnPerformanceUpdate;
+        public event LiveSearchUpdateHandler OnLiveSearchUpdate;
         public event LiveSearchDetectionHandler OnLiveSearchDetection;
         //public event CountUpdateHandler OnCountUpdate;
         public event SubscribedHandler OnSubscribed;
@@ -271,6 +273,22 @@ namespace EyesOnItSDK.SocketIO
                     PerformanceUpdateDataWrapper payload = response.GetValue<PerformanceUpdateDataWrapper>(0);
 
                     OnPerformanceUpdate?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle performance_update");
+                }
+            });
+
+            socket.On("live_search_update", response =>
+            {
+                try
+                {
+                    Log.Debug("SocketIOClient: live_search_update message received");
+
+                    LiveSearchUpdateData[] payload = response.GetValue<LiveSearchUpdateData[]>(0);
+
+                    OnLiveSearchUpdate?.Invoke(payload);
                 }
                 catch (Exception ex)
                 {
