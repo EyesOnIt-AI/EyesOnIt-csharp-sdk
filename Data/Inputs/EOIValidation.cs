@@ -264,13 +264,6 @@ namespace EyesOnItSDK.Data.Inputs
 
             if (response.Success)
             {
-                response = inputs.DurationSeconds == null || inputs.DurationSeconds >= 0
-                    ? EOIResponse.DefaultSuccess()
-                    : new EOIResponse(false, $"Live search duration must be greater than 0. Value is {inputs.DurationSeconds}");
-            }
-
-            if (response.Success)
-            {
                 response = ValidateNotification(inputs.Notification);
             }
 
