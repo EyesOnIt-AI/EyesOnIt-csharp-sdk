@@ -14,9 +14,6 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("object_size")]
         public int? ObjectSize { get; set; }
 
-        [JsonPropertyName("detection_type")]
-        public string DetectionType { get; set; }
-
         [JsonPropertyName("object_descriptions")]
         public EOIObjectDescription[] ObjectDescriptions { get; set; }
 

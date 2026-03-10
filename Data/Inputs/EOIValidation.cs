@@ -20,7 +20,7 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MAX_CONFIDENCE_THRESHOLD = 99;
         private static int MIN_FRAME_RATE = 1;
         private static int MIN_LINE_VERTEX_COUNT = 2;
-        private static string[] VALID_CLASS_NAMES = { "person", "vehicle", "bag", "animal", "face", "unknown" };
+        private static string[] VALID_CLASS_NAMES = { "person", "vehicle", "bag", "animal", "unknown" };
         private static string[] VALID_DETECTION_TYPE_NAMES = { "class_name", "natural_language", "face_recognition", "similarity" };
         private static string[] VALID_FACE_REC_MATCH_TYPE_NAMES = { "person", "group" };
         private static string[] COUNT_CONDITION_TYPES = { "count_equals", "count_greater_than", "count_less_than" };
@@ -445,26 +445,22 @@ namespace EyesOnItSDK.Data.Inputs
                         {
                             response = new EOIResponse(false, $"In detection configurations, the object size should be at least {EOIValidation.MIN_OBJECT_SIZE}. object_size = {detectionConfig.ObjectSize}");
                         }
-                        else if (detectionConfig.DetectionType == null || !EOIValidation.VALID_DETECTION_TYPE_NAMES.Contains(detectionConfig.DetectionType.Trim()))
+
+                        if (detectionConfig.ClassName != null && !EOIValidation.VALID_CLASS_NAMES.Contains(detectionConfig.ClassName.Trim()))
                         {
-                            response = new EOIResponse(false, $"In detection configurations, detection type is not valid. Detection type is {detectionConfig.DetectionType}");
+                            response = new EOIResponse(false, $"In detection configurations, class name is not valid. Class name is {detectionConfig.ClassName}");
                         }
-                        else if (detectionConfig.DetectionType.Trim() == "natural_lanuage")
+                        else
                         {
-                            if (detectionConfig.ClassName != null && !EOIValidation.VALID_CLASS_NAMES.Contains(detectionConfig.ClassName.Trim()))
-                            {
-                                response = new EOIResponse(false, $"In detection configurations, class name is not valid. Class name is {detectionConfig.ClassName}");
-                            }
-                            else
-                            {
-                                response = ValidateObjectDescriptions(detectionConfig.ObjectDescriptions, validateForVideo);
-                            }
+                            response = ValidateObjectDescriptions(detectionConfig.ObjectDescriptions, validateForVideo);
                         }
-                        else if (detectionConfig.DetectionType.Trim() == "face_recognition")
+
+                        if (response.Success && detectionConfig.FaceRecognition != null)
                         {
                             response = ValidateFaceRecognitionConfig(detectionConfig.FaceRecognition.MatchType, detectionConfig.FaceRecognition.Person, detectionConfig.FaceRecognition.Group);
                         }
-                        else if (detectionConfig.DetectionType.Trim() == "similarity")
+
+                        if (response.Success && detectionConfig.Similarity != null)
                         {
                             response = ValidateSimilarityConfig(detectionConfig.Similarity.Image, detectionConfig.Similarity.MatchThreshold);
                         }
