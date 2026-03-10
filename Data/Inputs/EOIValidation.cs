@@ -270,6 +270,42 @@ namespace EyesOnItSDK.Data.Inputs
             return response;
         }
 
+        public static EOIResponse ValidatePauseLiveSearchInputs(EOIPauseLiveSearchInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (inputs == null)
+            {
+                response = new EOIResponse(false, "inputs = null. Pause live search request must include inputs");
+            }
+            else
+            {
+                response = inputs.SearchID == -1 || inputs.SearchID > 0 ?
+                    EOIResponse.DefaultSuccess() :
+                    new EOIResponse(false, $"live search ID must be greater than 0. Value is {inputs.SearchID}");
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateResumeLiveSearchInputs(EOIResumeLiveSearchInputs inputs)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (inputs == null)
+            {
+                response = new EOIResponse(false, "inputs = null. Resume live search request must include inputs");
+            }
+            else
+            {
+                response = inputs.SearchID == -1 || inputs.SearchID > 0 ?
+                    EOIResponse.DefaultSuccess() :
+                    new EOIResponse(false, $"live search ID must be greater than 0. Value is {inputs.SearchID}");
+            }
+
+            return response;
+        }
+
         public static EOIResponse ValidateCancelLiveSearchInputs(EOICancelLiveSearchInputs inputs)
         {
             EOIResponse response = EOIResponse.DefaultSuccess();

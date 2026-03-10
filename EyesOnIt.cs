@@ -34,6 +34,8 @@ namespace EyesOnItSDK
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
         private readonly string searchLivePath = "/live_search";
         private readonly string searchArchivePath = "/archive_search";
+        private readonly string pauseLiveSearchPath = "/pause_live_search";
+        private readonly string resumeLiveSearchPath = "/resume_live_search";
         private readonly string cancelLiveSearchPath = "/cancel_live_search";
         private readonly string facerecGroupsPath = "/facerec_groups";
         private readonly string facerecSearchGroupNamesPath = "/facerec_search_group_names";
@@ -522,6 +524,66 @@ namespace EyesOnItSDK
             }
 
             return liveSearchResponse;
+        }
+
+        public async Task<EOIPauseLiveSearchResponse> PauseLiveSearch(EOIPauseLiveSearchInputs inputs)
+        {
+            EOIPauseLiveSearchResponse pauseLiveSearchResponse = new EOIPauseLiveSearchResponse(EOIValidation.ValidatePauseLiveSearchInputs(inputs));
+
+            if (pauseLiveSearchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{pauseLiveSearchPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    pauseLiveSearchResponse = new EOIPauseLiveSearchResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"PauseLiveSearch: Exception: {exc.Message}");
+                    pauseLiveSearchResponse = new EOIPauseLiveSearchResponse(false, exc.Message);
+                }
+            }
+
+            return pauseLiveSearchResponse;
+        }
+
+        public async Task<EOIResumeLiveSearchResponse> ResumeLiveSearch(EOIResumeLiveSearchInputs inputs)
+        {
+            EOIResumeLiveSearchResponse resumeLiveSearchResponse = new EOIResumeLiveSearchResponse(EOIValidation.ValidateResumeLiveSearchInputs(inputs));
+
+            if (resumeLiveSearchResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{resumeLiveSearchPath}";
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    resumeLiveSearchResponse = new EOIResumeLiveSearchResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"ResumeLiveSearch: Exception: {exc.Message}");
+                    resumeLiveSearchResponse = new EOIResumeLiveSearchResponse(false, exc.Message);
+                }
+            }
+
+            return resumeLiveSearchResponse;
         }
 
         public async Task<EOICancelLiveSearchResponse> CancelLiveSearch(EOICancelLiveSearchInputs inputs)
