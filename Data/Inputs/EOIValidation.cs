@@ -22,7 +22,7 @@ namespace EyesOnItSDK.Data.Inputs
         private static int MIN_LINE_VERTEX_COUNT = 2;
         private static string[] VALID_CLASS_NAMES = { "person", "vehicle", "bag", "animal", "unknown" };
         private static string[] VALID_DETECTION_TYPE_NAMES = { "class_name", "natural_language", "face_recognition", "similarity" };
-        private static string[] VALID_FACE_REC_MATCH_TYPE_NAMES = { "person", "group" };
+        private static string[] VALID_FACE_REC_MATCH_TYPE_NAMES = { "person", "group", "all_faces" };
         private static string[] COUNT_CONDITION_TYPES = { "count_equals", "count_greater_than", "count_less_than" };
         private static string[] LINE_CROSS_CONDITION_TYPES = { "line_cross" };
         private static int MIN_LINE_NAME_LENGTH = 3;
@@ -172,19 +172,13 @@ namespace EyesOnItSDK.Data.Inputs
             if (response.Success)
             {
                 string trimmedObjectDescription = inputs.ObjectDescription?.Trim();
-                string trimmedPersonId = inputs.FacePersonId?.Trim();
-                string trimmedGroupId = inputs.FaceGroupId?.Trim();
-                string trimmedSeedId = inputs.SeedId?.Trim();
-
                 bool objDescValid = trimmedObjectDescription != null && trimmedObjectDescription.Length >= EOIValidation.MIN_SEARCH_QUERY_LENGTH;
-                bool personIdValid = trimmedPersonId != null && trimmedPersonId.Length >= EOIValidation.MIN_SEARCH_QUERY_LENGTH;
-                bool groupIdValid = trimmedGroupId != null && trimmedGroupId.Length >= EOIValidation.MIN_SEARCH_QUERY_LENGTH;
-                bool seedIdValid = trimmedSeedId != null && trimmedSeedId.Length >= EOIValidation.MIN_SEED_ID_LENGTH;
-                bool imageValid = inputs.Image != null && inputs.Image.Length >= EOIValidation.MIN_IMAGE_LENGTH;
+                bool faceRecognitionValid = ValidateFaceRecognitionConfig(inputs.FaceMatchType, inputs.FacePersonId, inputs.FaceGroupId).Success;
+                bool similarityValid = ValidateSimilarityConfig(inputs.Similarity).Success;
 
-                if (!objDescValid && !personIdValid && !groupIdValid && !seedIdValid && !imageValid)
+                if (!objDescValid && !faceRecognitionValid && !similarityValid)
                 {
-                    response = new EOIResponse(false, "Search must include one of the following: object description, person, group, seed image id or image");
+                    response = new EOIResponse(false, "Search must include a valid object description, face recognition configuration, or similarity configuration");
                 }
             }
 
@@ -235,23 +229,7 @@ namespace EyesOnItSDK.Data.Inputs
                 }
                 else if (inputs.SearchType.Trim() == "similarity")
                 {
-                    response = ValidateSimilarityConfig(inputs.Image, inputs.AlertThreshold);
-                }
-            }
-
-            if (response.Success)
-            {
-                if (!string.IsNullOrEmpty(inputs.SeedId) && inputs.SeedId.Length < 10)
-                {
-                    response = new EOIResponse(false, "Please provide a valid similarity search seed ID");
-                }
-            }
-
-            if (response.Success)
-            {
-                if (!string.IsNullOrEmpty(inputs.Image) && inputs.Image.Length < EOIValidation.MIN_IMAGE_LENGTH)
-                {
-                    response = new EOIResponse(false, "Please provide a valid base64 image string");
+                    response = ValidateSimilarityConfig(inputs.Similarity);
                 }
             }
 
@@ -498,7 +476,7 @@ namespace EyesOnItSDK.Data.Inputs
 
                         if (response.Success && detectionConfig.Similarity != null)
                         {
-                            response = ValidateSimilarityConfig(detectionConfig.Similarity.Image, detectionConfig.Similarity.MatchThreshold);
+                            response = ValidateSimilarityConfig(detectionConfig.Similarity);
                         }
 
                         if (response.Success && validateForVideo)
@@ -1023,10 +1001,10 @@ namespace EyesOnItSDK.Data.Inputs
                 //    response = new EOIResponse(false, $"If genetec notification is included, webhook event ID must be specified. WebhookEventId is null.");
                 //}
                 //else 
-                if (genetecNotification.WebhookCameraUUID == null || genetecNotification.WebhookCameraUUID.Length < MIN_CAMERA_UUID_LENGTH)
-                {
-                    response = new EOIResponse(false, $"If genetec notification is included, the webhook camera uuid must be specified with a minimum length of {MIN_CAMERA_UUID_LENGTH} characters. WebhookCameraUUID = {genetecNotification.WebhookCameraUUID}");
-                }
+                //if (genetecNotification.WebhookCameraUUID == null || genetecNotification.WebhookCameraUUID.Length < MIN_CAMERA_UUID_LENGTH)
+                //{
+                //    response = new EOIResponse(false, $"If genetec notification is included, the webhook camera uuid must be specified with a minimum length of {MIN_CAMERA_UUID_LENGTH} characters. WebhookCameraUUID = {genetecNotification.WebhookCameraUUID}");
+                //}
             }
 
             return response;
@@ -1160,6 +1138,71 @@ namespace EyesOnItSDK.Data.Inputs
                 {
                     response = new EOIResponse(false, $"Invalid similarity match threshold. Value must be between {EOIValidation.MIN_CONFIDENCE_THRESHOLD} and {EOIValidation.MAX_CONFIDENCE_THRESHOLD}. Value is {matchThreshold}");
                 }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateSimilarityImageConfig(EOISimilarityImageConfig imageConfig)
+        {
+            EOIResponse response = imageConfig == null ?
+                new EOIResponse(false, "Invalid similarity image. Please provide a valid similarity image configuration")
+                : EOIResponse.DefaultSuccess();
+
+            if (response.Success)
+            {
+                string seedId = imageConfig.SeedId?.Trim();
+                string image = imageConfig.Image?.Trim();
+                bool seedIdValid = !string.IsNullOrEmpty(seedId) && seedId.Length >= EOIValidation.MIN_SEED_ID_LENGTH;
+                bool imageValid = !string.IsNullOrEmpty(image) && image.Length >= EOIValidation.MIN_IMAGE_LENGTH;
+
+                if (!seedIdValid && !imageValid)
+                {
+                    response = new EOIResponse(false, "Invalid similarity image. Please provide a valid seed ID or base64 image string");
+                }
+                else if (imageConfig.Alert == true && imageConfig.Threshold == null)
+                {
+                    response = new EOIResponse(false, "Invalid similarity image threshold. Please provide a threshold when alert is true");
+                }
+                else if (imageConfig.Threshold != null &&
+                    (imageConfig.Threshold < EOIValidation.MIN_CONFIDENCE_THRESHOLD || imageConfig.Threshold > EOIValidation.MAX_CONFIDENCE_THRESHOLD))
+                {
+                    response = new EOIResponse(false, $"Invalid similarity match threshold. Value must be between {EOIValidation.MIN_CONFIDENCE_THRESHOLD} and {EOIValidation.MAX_CONFIDENCE_THRESHOLD}. Value is {imageConfig.Threshold}");
+                }
+            }
+
+            return response;
+        }
+
+        public static EOIResponse ValidateSimilarityConfig(EOISimilarityConfig similarityConfig)
+        {
+            EOIResponse response = similarityConfig == null ?
+                new EOIResponse(false, "Invalid similarity configuration. Please provide at least one similarity image")
+                : EOIResponse.DefaultSuccess();
+
+            var validImageCount = 0;
+
+            if (response.Success)
+            {
+                if (similarityConfig.Images != null)
+                {
+                    foreach (var imageConfig in similarityConfig.Images)
+                    {
+                        response = ValidateSimilarityImageConfig(imageConfig);
+
+                        if (!response.Success)
+                        {
+                            break;
+                        }
+
+                        validImageCount++;
+                    }
+                }
+            }
+
+            if (response.Success && validImageCount == 0)
+            {
+                response = new EOIResponse(false, "Invalid similarity configuration. Please provide at least one valid similarity image");
             }
 
             return response;

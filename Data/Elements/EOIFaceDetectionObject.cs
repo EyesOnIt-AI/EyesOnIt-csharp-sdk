@@ -1,4 +1,7 @@
 
+using Newtonsoft.Json;
+using System;
+using System.IO;
 using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.Data.Elements
@@ -22,6 +25,34 @@ namespace EyesOnItSDK.Data.Elements
 
         [JsonPropertyName("group_display_name")]
         public string GroupDisplayName { get; set; }
+
+        [JsonProperty("image")]
+        [JsonPropertyName("image")]
+        public string Base64Image
+        {
+            get
+            {
+                return base64Image;
+            }
+            set
+            {
+                base64Image = value;
+                if (!string.IsNullOrEmpty(value))
+                {
+                    byte[] imageBytes = Convert.FromBase64String(base64Image);
+                    using (var ms = new MemoryStream(imageBytes))
+                    using (var tempImg = System.Drawing.Image.FromStream(ms))
+                    {
+                        // clone into a Bitmap so it no longer depends on the MemoryStream
+                        Image = new System.Drawing.Bitmap(tempImg);
+                    }
+                }
+            }
+        }
+
+        private string base64Image;
+
+        public System.Drawing.Image Image { get; set; }
 
         public EOIFaceDetectionObject()
         {

@@ -1,6 +1,7 @@
 ﻿using Serilog;
 using System;
 using System.IO;
+using System.Diagnostics;
 using System.Net.Http;
 using System.Runtime.Remoting.Messaging;
 using System.Text;
@@ -49,8 +50,20 @@ namespace EyesOnItSDK
 
         public EyesOnIt(string baseUrl)
         {
-            httpClient = new HttpClient();
             this.baseUrl = baseUrl;
+            Uri baseUri = null;
+            Uri.TryCreate(baseUrl, UriKind.Absolute, out baseUri);
+
+            ConfigureHttpTransport(baseUri);
+
+            var handler = CreateHttpClientHandler(baseUri);
+            httpClient = new HttpClient(handler);
+
+            Log.Information(
+                "EyesOnIt SDK initialized for {BaseUrl}. Loopback={IsLoopback}, UseProxy={UseProxy}",
+                baseUrl,
+                baseUri?.IsLoopback ?? false,
+                handler.UseProxy);
         }
 
         public string GetBaseUrl()
@@ -883,39 +896,110 @@ namespace EyesOnItSDK
         private async Task<EOIMessage> PostAsync(string endpoint, string jsonString)
         {
             EOIMessage eoiMessage = null;
+            var requestStopwatch = Stopwatch.StartNew();
 
             try
             {
+                var requestUri = new Uri(endpoint);
+                var servicePoint = ServicePointManager.FindServicePoint(requestUri);
+                Log.Information(
+                    "PostAsync: dispatching POST to {Endpoint}. ConnectionLimit={ConnectionLimit}, CurrentConnections={CurrentConnections}",
+                    endpoint,
+                    servicePoint?.ConnectionLimit ?? -1,
+                    servicePoint?.CurrentConnections ?? -1);
                 Log.Debug($"PostAsync: posting to {endpoint}. JSON = {jsonString}");
 
-                var content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
+                {
+                    request.Headers.ExpectContinue = false;
+                    request.Content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
-                HttpResponseMessage httpResponse = await httpClient.PostAsync(endpoint, content);
-                string responseContent = await httpResponse.Content.ReadAsStringAsync();
+                    using (HttpResponseMessage httpResponse = await httpClient.SendAsync(
+                        request,
+                        HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                    {
+                        Log.Information(
+                            "PostAsync: response headers received from {Endpoint} after {ElapsedMilliseconds} ms. StatusCode={StatusCode}",
+                            endpoint,
+                            requestStopwatch.ElapsedMilliseconds,
+                            (int)httpResponse.StatusCode);
 
-                string responseNoImage = this.RemoveImageProperties(responseContent);
-                Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseNoImage}");
+                        string responseContent = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
+                        string responseNoImage = this.RemoveImageProperties(responseContent);
+                        Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseNoImage}");
 
-                httpResponse.EnsureSuccessStatusCode();
+                        eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
+
+                        httpResponse.EnsureSuccessStatusCode();
+                    }
+                }
             }
             catch (HttpRequestException exc)
             {
                 string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
-                Log.Error($"PostAsync: HttpRequestException: {exc.Message} {innerExcMsg}");
+                Log.Error($"PostAsync: HttpRequestException after {requestStopwatch.ElapsedMilliseconds} ms: {exc.Message} {innerExcMsg}");
 
                 eoiMessage = new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
             }
             catch (Exception exc)
             {
                 string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
-                Log.Error($"PostAsync: Generic Exception: {exc.Message} {innerExcMsg}");
+                Log.Error($"PostAsync: Generic Exception after {requestStopwatch.ElapsedMilliseconds} ms: {exc.Message} {innerExcMsg}");
 
                 eoiMessage = new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
             }
 
             return eoiMessage;
+        }
+
+        private static HttpClientHandler CreateHttpClientHandler(Uri baseUri)
+        {
+            var handler = new HttpClientHandler();
+
+            if (baseUri?.IsLoopback == true)
+            {
+                handler.UseProxy = false;
+                handler.Proxy = null;
+            }
+
+            return handler;
+        }
+
+        private static void ConfigureHttpTransport(Uri baseUri)
+        {
+            ServicePointManager.Expect100Continue = false;
+            if (ServicePointManager.DefaultConnectionLimit < 32)
+            {
+                ServicePointManager.DefaultConnectionLimit = 32;
+            }
+
+            if (baseUri == null)
+            {
+                return;
+            }
+
+            var servicePoint = ServicePointManager.FindServicePoint(baseUri);
+            if (servicePoint == null)
+            {
+                return;
+            }
+
+            if (servicePoint.ConnectionLimit < 32)
+            {
+                servicePoint.ConnectionLimit = 32;
+            }
+
+            servicePoint.Expect100Continue = false;
+            servicePoint.UseNagleAlgorithm = false;
+
+            Log.Information(
+                "Configured HTTP transport for {BaseUrl}. DefaultConnectionLimit={DefaultConnectionLimit}, ServicePointConnectionLimit={ServicePointConnectionLimit}, Expect100Continue={Expect100Continue}, UseNagleAlgorithm={UseNagleAlgorithm}",
+                baseUri,
+                ServicePointManager.DefaultConnectionLimit,
+                servicePoint.ConnectionLimit,
+                servicePoint.Expect100Continue,
+                servicePoint.UseNagleAlgorithm);
         }
 
         private string RemoveImageProperties(string json)

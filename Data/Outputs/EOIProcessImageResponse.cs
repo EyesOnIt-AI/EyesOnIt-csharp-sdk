@@ -6,7 +6,7 @@ namespace EyesOnItSDK.Data.Outputs
 {
     public class EOIProcessImageResponse : EOIBaseOutputs
     {
-        public List<EOIDetection> Detections { get; set; }
+        public List<EOIImageDetection> Detections { get; set; }
 
         public string Image { get; set; }
 
@@ -20,7 +20,7 @@ namespace EyesOnItSDK.Data.Outputs
                 if (dataElement.TryGetProperty("detections", out JsonElement detectionElement))
                 {
                     // Deserialize the detections part
-                    Detections = JsonSerializer.Deserialize<List<EOIDetection>>(detectionElement.GetRawText());
+                    Detections = JsonSerializer.Deserialize<List<EOIImageDetection>>(detectionElement.GetRawText());
                 }
 
                 // Check if it contains the "image" key

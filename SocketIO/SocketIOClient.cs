@@ -1,6 +1,7 @@
 // SocketClient.cs
 using Serilog;
 using SocketIOClient;
+using SocketIO.Serializer.NewtonsoftJson;
 using System;
 using System.IO;
 using System.Linq;
@@ -53,6 +54,7 @@ namespace EyesOnItSDK.SocketIO
                 if (socket == null)
                 {
                     socket = new SocketIOClient.SocketIO(url, options);
+                    socket.Serializer = new NewtonsoftJsonSerializer();
                 }
 
                 if (!handlersRegistered)

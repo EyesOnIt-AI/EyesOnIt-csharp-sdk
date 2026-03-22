@@ -14,11 +14,8 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("object_description")] 
         public string ObjectDescription { get; set; }
 
-        [JsonPropertyName("seed_id")]
-        public string SeedId { get; set; }
-
-        [JsonPropertyName("image")]
-        public string Image { get; set; }
+        [JsonPropertyName("similarity")]
+        public EOISimilarityConfig Similarity { get; set; }
         
         // Face recognition match type: `person` or `group`
         [JsonPropertyName("face_match_type")]
@@ -31,7 +28,7 @@ namespace EyesOnItSDK.Data.Inputs
         public string FaceGroupId { get; set; }
 
         [JsonPropertyName("alert_threshold")]
-        public double? AlertThreshold { get; set; }
+        public int? AlertThreshold { get; set; }
 
         [JsonPropertyName("stream_list")]
         public string[] StreamList { get; set; }
@@ -43,19 +40,17 @@ namespace EyesOnItSDK.Data.Inputs
         public EOISearchInputs(string className,
             string searchType,
             string objectDescription,
-            string seedId,
-            string image,
+            EOISimilarityConfig similarity,
             string faceMatchType,
             string facePersonId,
             string faceGroupId,
-            double? threshold,
+            int? threshold,
             string[] streamList)
         {
             ClassName = className;
             SearchType = searchType;
             ObjectDescription = objectDescription;
-            SeedId = seedId;
-            Image = image;
+            Similarity = similarity;
             FaceMatchType = faceMatchType;
             FacePersonId = facePersonId;
             FaceGroupId = faceGroupId;

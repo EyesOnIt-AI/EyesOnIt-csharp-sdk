@@ -9,7 +9,7 @@ namespace EyesOnItSDK.Data.Outputs
     {
         public string Image { get; set; }
 
-        public List<EOIDetection> Detections { get; set; }
+        public List<EOIVideoDetection> Detections { get; set; }
 
         internal EOIGetLastDetectionInfoResponse(EOIMessage eoiMessage) : base(eoiMessage)
         {
@@ -21,7 +21,7 @@ namespace EyesOnItSDK.Data.Outputs
                 if (dataElement.TryGetProperty("detections", out JsonElement detectionElement))
                 {
                     // Deserialize the detection part
-                    Detections = JsonSerializer.Deserialize<List<EOIDetection>>(detectionElement.GetRawText());
+                    Detections = JsonSerializer.Deserialize<List<EOIVideoDetection>>(detectionElement.GetRawText());
                 }
 
                 // Check if it contains the "image" key
@@ -44,7 +44,7 @@ namespace EyesOnItSDK.Data.Outputs
         public EOIDetection GetMostRecentDetection()
         {
             DateTime mostRecentAlertTime = DateTime.MinValue;
-            EOIDetection mostRecentDetection = null;
+            EOIVideoDetection mostRecentDetection = null;
 
             foreach (var detection in Detections)
             {
