@@ -1,16 +1,17 @@
-﻿using EyesOnItSDK.Data.Elements;
+﻿using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Inputs
+namespace EyesOnItSDK.API.Inputs
 {
-    public class EOIPauseLiveSearchInputs {
+    public class EOIUpdateLiveSearchInputs
+    {
         [JsonPropertyName("search_id")]
-        public int SearchID { get; set; }
+        public int SearchId { get; set; }
 
-        public EOIPauseLiveSearchInputs(int searchId)
+        public EOIUpdateLiveSearchInputs(int searchId)
         {
-            SearchID = searchId;
+            SearchId = searchId;
         }
 
         public string ToJson()
@@ -25,7 +26,7 @@ namespace EyesOnItSDK.Data.Inputs
             return jsonData;
         }
 
-        public static EOIPauseLiveSearchInputs FromJson(string jsonString)
+        public static EOIUpdateLiveSearchInputs FromJson(string jsonString)
         {
             var options = new JsonSerializerOptions
             {
@@ -36,9 +37,17 @@ namespace EyesOnItSDK.Data.Inputs
                 }
             };
 
-            EOIPauseLiveSearchInputs pauseLiveSearchInputs = jsonString == null ? null : JsonSerializer.Deserialize<EOIPauseLiveSearchInputs>(jsonString, options);
+            EOIUpdateLiveSearchInputs updateLiveSearchInputs = jsonString == null ? null : JsonSerializer.Deserialize<EOIUpdateLiveSearchInputs>(jsonString, options);
 
-            return pauseLiveSearchInputs;
+            return updateLiveSearchInputs;
+        }
+    }
+
+    [Obsolete("Use EOIUpdateLiveSearchInputs.")]
+    public class EOIPauseLiveSearchInputs : EOIUpdateLiveSearchInputs
+    {
+        public EOIPauseLiveSearchInputs(int searchId) : base(searchId)
+        {
         }
     }
 }

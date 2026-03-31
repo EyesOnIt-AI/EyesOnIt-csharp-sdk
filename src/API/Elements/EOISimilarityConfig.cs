@@ -1,8 +1,8 @@
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
-    public class EOISimilarityImageConfig
+    public class EOISimilarityImage
     {
         [JsonPropertyName("seed_id")]
         public string SeedId { get; set; }
@@ -16,7 +16,7 @@ namespace EyesOnItSDK.Data.Elements
         [JsonPropertyName("threshold")]
         public int? Threshold { get; set; }
 
-        public EOISimilarityImageConfig()
+        public EOISimilarityImage()
         {
 
         }
@@ -25,7 +25,7 @@ namespace EyesOnItSDK.Data.Elements
     public class EOISimilarityConfig
     {
         [JsonPropertyName("images")]
-        public EOISimilarityImageConfig[] Images { get; set; }
+        public EOISimilarityImage[] Images { get; set; }
 
         public EOISimilarityConfig()
         {

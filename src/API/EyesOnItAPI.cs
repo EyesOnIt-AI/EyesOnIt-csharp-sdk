@@ -8,17 +8,17 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
-using EyesOnItSDK.Data.Elements;
-using EyesOnItSDK.Data.Inputs;
+using EyesOnItSDK.API.Elements;
+using EyesOnItSDK.API.Inputs;
 using System.Net;
-using EyesOnItSDK.Data.Outputs;
+using EyesOnItSDK.API.Outputs;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using System.Xml;
 
-namespace EyesOnItSDK
+namespace EyesOnItSDK.API
 {
-    public class EyesOnIt
+    public class EyesOnItAPI
     {
         private readonly HttpClient httpClient;
         private readonly string addStreamPath = "/add_stream";
@@ -30,7 +30,7 @@ namespace EyesOnItSDK
         private readonly string getVideoFramePath = "/get_video_frame";
         private readonly string monitorStreamPath = "/monitor_stream";
         private readonly string processImagePath = "/process_image";
-        private readonly string processVideosPath = "/process_videos";
+        private readonly string processVideoPath = "/process_video";
         private readonly string removeStreamPath = "/remove_stream";
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
         private readonly string searchLivePath = "/live_search";
@@ -48,7 +48,7 @@ namespace EyesOnItSDK
         private readonly string facerecRemovePersonPath = "/facerec_remove_person";
         private readonly string facerecPersonDetailsPath = "/facerec_person_details";
 
-        public EyesOnIt(string baseUrl)
+        public EyesOnItAPI(string baseUrl)
         {
             this.baseUrl = baseUrl;
             Uri baseUri = null;
@@ -66,11 +66,13 @@ namespace EyesOnItSDK
                 handler.UseProxy);
         }
 
+        [Obsolete("Use the constructor argument or store the API base path in your application.")]
         public string GetBaseUrl()
         {
             return this.baseUrl;
         }
 
+        [Obsolete("Use ProcessImage with EOIProcessImageInputs.")]
         public async Task<EOIProcessImageResponse> ProcessImageFromFile(string filePath, EOIRegion[] regions)
         {
             return await this.ProcessImageFromFile(
@@ -78,9 +80,10 @@ namespace EyesOnItSDK
                 filePath);
         }
 
+        [Obsolete("Use ProcessImage with EOIProcessImageInputs.")]
         public async Task<EOIProcessImageResponse> ProcessImageFromFile(EOIProcessImageInputs inputs, string filePath)
         {
-            EOIProcessImageResponse eoiProcessImageResponse = new EOIProcessImageResponse(EOIValidation.ValidateProcessImageInputs(inputs));
+            EOIProcessImageResponse eoiProcessImageResponse = new EOIProcessImageResponse(EOIValidator.ValidateProcessImageInputs(inputs));
 
             if (eoiProcessImageResponse.Success)
             {
@@ -115,7 +118,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIProcessImageResponse> ProcessImage(EOIProcessImageInputs inputs)
         {
-            EOIProcessImageResponse eoiProcessImageResponse = new EOIProcessImageResponse(EOIValidation.ValidateProcessImageInputs(inputs));
+            EOIProcessImageResponse eoiProcessImageResponse = new EOIProcessImageResponse(EOIValidator.ValidateProcessImageInputs(inputs));
 
             if (eoiProcessImageResponse.Success)
             {
@@ -168,6 +171,11 @@ namespace EyesOnItSDK
             return eoiGetAllStreamsInfoResponse;
         }
 
+        public async Task<EOIGetStreamDetailsResponse> GetStreamDetails(string streamUrl)
+        {
+            return await GetStreamDetails(new EOIGetStreamDetailsInputs(streamUrl));
+        }
+
         public async Task<EOIGetStreamDetailsResponse> GetStreamDetails(EOIGetStreamDetailsInputs inputs)
         {
             EOIGetStreamDetailsResponse eoiGetStreamDetailsResponse;
@@ -197,6 +205,7 @@ namespace EyesOnItSDK
             return eoiGetStreamDetailsResponse;
         }
 
+        [Obsolete("This endpoint is not part of the canonical TypeScript SDK surface.")]
         public async Task<EOIGetSupportedClassesResponse> GetSupportedClasses()
         {
             EOIGetSupportedClassesResponse getSupportedClassesResponse;
@@ -263,7 +272,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIAddStreamResponse> AddStream(EOIAddStreamInputs inputs)
         {
-            EOIAddStreamResponse addStreamResponse = new EOIAddStreamResponse(EOIValidation.ValidateAddStreamInputs(inputs));
+            EOIAddStreamResponse addStreamResponse = new EOIAddStreamResponse(EOIValidator.ValidateAddStreamInputs(inputs));
 
             if (addStreamResponse.Success)
             {
@@ -291,13 +300,13 @@ namespace EyesOnItSDK
             return addStreamResponse;
         }
 
-        public async Task<EOIProcessVideosResponse> ProcessVideos(EOIProcessVideosInputs inputs)
+        public async Task<EOIProcessVideoResponse> ProcessVideo(EOIProcessVideoInputs inputs)
         {
-            EOIProcessVideosResponse processVideosResponse = new EOIProcessVideosResponse(EOIValidation.ValidateProcessVideosInputs(inputs));
+            EOIProcessVideoResponse processVideosResponse = new EOIProcessVideoResponse(EOIValidator.ValidateProcessVideoInputs(inputs));
 
             if (processVideosResponse.Success)
             {
-                string endPoint = $"{baseUrl}{processVideosPath}";
+                string endPoint = $"{baseUrl}{processVideoPath}";
 
                 try
                 {
@@ -311,12 +320,12 @@ namespace EyesOnItSDK
                     Log.Debug($"Calling {endPoint} with this JSON: {jsonData}");
 
                     EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                    processVideosResponse = new EOIProcessVideosResponse(eoiMessage);
+                    processVideosResponse = new EOIProcessVideoResponse(eoiMessage);
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"ProcessVideo: Exception: {exc.Message}");
-                    processVideosResponse = new EOIProcessVideosResponse(false, exc.Message);
+                    processVideosResponse = new EOIProcessVideoResponse(false, exc.Message);
                 }
             }
 
@@ -388,12 +397,12 @@ namespace EyesOnItSDK
 
         public async Task<EOIGetVideoFrameResponse> GetVideoFrame(string streamUrl)
         {
-            return await this.GetVideoFrame(new EOIGetVideoFrameInputs(streamUrl));
+            return await this.GetVideoFrame(new EOIVideoFrameInputs(streamUrl));
         }
 
-        public async Task<EOIGetVideoFrameResponse> GetVideoFrame(EOIGetVideoFrameInputs inputs)
+        public async Task<EOIGetVideoFrameResponse> GetVideoFrame(EOIVideoFrameInputs inputs)
         {
-            EOIGetVideoFrameResponse getVideoFrameResponse = new EOIGetVideoFrameResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
+            EOIGetVideoFrameResponse getVideoFrameResponse = new EOIGetVideoFrameResponse(EOIValidator.ValidateStreamUrl(inputs.StreamUrl));
 
             if (getVideoFrameResponse.Success)
             {
@@ -424,7 +433,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIGetLastDetectionInfoResponse> GetLastDetectionInfo(EOIGetLastDetectionInfoInputs inputs)
         {
-            EOIGetLastDetectionInfoResponse getLastDetectionInfoResponse = new EOIGetLastDetectionInfoResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
+            EOIGetLastDetectionInfoResponse getLastDetectionInfoResponse = new EOIGetLastDetectionInfoResponse(EOIValidator.ValidateStreamUrl(inputs.StreamUrl));
 
             if (getLastDetectionInfoResponse.Success)
             {
@@ -455,7 +464,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIRemoveStreamResponse> RemoveStream(EOIRemoveStreamInputs inputs)
         {
-            EOIRemoveStreamResponse removeStreamResponse = new EOIRemoveStreamResponse(EOIValidation.ValidateStreamUrl(inputs.StreamUrl));
+            EOIRemoveStreamResponse removeStreamResponse = new EOIRemoveStreamResponse(EOIValidator.ValidateStreamUrl(inputs.StreamUrl));
 
             if (removeStreamResponse.Success)
             {
@@ -481,7 +490,7 @@ namespace EyesOnItSDK
 
         public async Task<EOISearchResponse> SearchArchive(EOIArchiveSearchInputs inputs)
         {
-            EOISearchResponse searchResponse = new EOISearchResponse(EOIValidation.ValidateArchiveSearchInputs(inputs));
+            EOISearchResponse searchResponse = new EOISearchResponse(EOIValidator.ValidateArchiveSearchInputs(inputs));
 
             if (searchResponse.Success)
             {
@@ -511,7 +520,7 @@ namespace EyesOnItSDK
 
         public async Task<EOILiveSearchResponse> SearchLive(EOILiveSearchInputs inputs)
         {
-            EOILiveSearchResponse liveSearchResponse = new EOILiveSearchResponse(EOIValidation.ValidateLiveSearchInputs(inputs));
+            EOILiveSearchResponse liveSearchResponse = new EOILiveSearchResponse(EOIValidator.ValidateLiveSearchInputs(inputs));
 
             if (liveSearchResponse.Success)
             {
@@ -539,9 +548,9 @@ namespace EyesOnItSDK
             return liveSearchResponse;
         }
 
-        public async Task<EOIPauseLiveSearchResponse> PauseLiveSearch(EOIPauseLiveSearchInputs inputs)
+        public async Task<EOIResponse> PauseLiveSearch(EOIUpdateLiveSearchInputs inputs)
         {
-            EOIPauseLiveSearchResponse pauseLiveSearchResponse = new EOIPauseLiveSearchResponse(EOIValidation.ValidatePauseLiveSearchInputs(inputs));
+            EOIResponse pauseLiveSearchResponse = EOIValidator.ValidateUpdateLiveSearchInputs(inputs);
 
             if (pauseLiveSearchResponse.Success)
             {
@@ -557,21 +566,21 @@ namespace EyesOnItSDK
                     var jsonData = JsonSerializer.Serialize(inputs, options);
 
                     EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                    pauseLiveSearchResponse = new EOIPauseLiveSearchResponse(eoiMessage);
+                    pauseLiveSearchResponse = new EOIResponse(eoiMessage.Success, eoiMessage.Message) { Data = eoiMessage.Data };
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"PauseLiveSearch: Exception: {exc.Message}");
-                    pauseLiveSearchResponse = new EOIPauseLiveSearchResponse(false, exc.Message);
+                    pauseLiveSearchResponse = new EOIResponse(false, exc.Message);
                 }
             }
 
             return pauseLiveSearchResponse;
         }
 
-        public async Task<EOIResumeLiveSearchResponse> ResumeLiveSearch(EOIResumeLiveSearchInputs inputs)
+        public async Task<EOIResponse> ResumeLiveSearch(EOIUpdateLiveSearchInputs inputs)
         {
-            EOIResumeLiveSearchResponse resumeLiveSearchResponse = new EOIResumeLiveSearchResponse(EOIValidation.ValidateResumeLiveSearchInputs(inputs));
+            EOIResponse resumeLiveSearchResponse = EOIValidator.ValidateUpdateLiveSearchInputs(inputs);
 
             if (resumeLiveSearchResponse.Success)
             {
@@ -587,21 +596,21 @@ namespace EyesOnItSDK
                     var jsonData = JsonSerializer.Serialize(inputs, options);
 
                     EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                    resumeLiveSearchResponse = new EOIResumeLiveSearchResponse(eoiMessage);
+                    resumeLiveSearchResponse = new EOIResponse(eoiMessage.Success, eoiMessage.Message) { Data = eoiMessage.Data };
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"ResumeLiveSearch: Exception: {exc.Message}");
-                    resumeLiveSearchResponse = new EOIResumeLiveSearchResponse(false, exc.Message);
+                    resumeLiveSearchResponse = new EOIResponse(false, exc.Message);
                 }
             }
 
             return resumeLiveSearchResponse;
         }
 
-        public async Task<EOICancelLiveSearchResponse> CancelLiveSearch(EOICancelLiveSearchInputs inputs)
+        public async Task<EOIResponse> CancelLiveSearch(EOIUpdateLiveSearchInputs inputs)
         {
-            EOICancelLiveSearchResponse cancelLiveSearchResponse = new EOICancelLiveSearchResponse(EOIValidation.ValidateCancelLiveSearchInputs(inputs));
+            EOIResponse cancelLiveSearchResponse = EOIValidator.ValidateUpdateLiveSearchInputs(inputs);
 
             if (cancelLiveSearchResponse.Success)
             {
@@ -617,16 +626,61 @@ namespace EyesOnItSDK
                     var jsonData = JsonSerializer.Serialize(inputs, options);
 
                     EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                    cancelLiveSearchResponse = new EOICancelLiveSearchResponse(eoiMessage);
+                    cancelLiveSearchResponse = new EOIResponse(eoiMessage.Success, eoiMessage.Message) { Data = eoiMessage.Data };
                 }
                 catch (HttpRequestException exc)
                 {
                     Log.Error($"CancelLiveSearch: Exception: {exc.Message}");
-                    cancelLiveSearchResponse = new EOICancelLiveSearchResponse(false, exc.Message);
+                    cancelLiveSearchResponse = new EOIResponse(false, exc.Message);
                 }
             }
 
             return cancelLiveSearchResponse;
+        }
+
+        [Obsolete("Use PauseLiveSearch with EOIUpdateLiveSearchInputs.")]
+        public async Task<EOIPauseLiveSearchResponse> PauseLiveSearch(EOIPauseLiveSearchInputs inputs)
+        {
+            return new EOIPauseLiveSearchResponse(await PauseLiveSearch((EOIUpdateLiveSearchInputs)inputs));
+        }
+
+        [Obsolete("Use ResumeLiveSearch with EOIUpdateLiveSearchInputs.")]
+        public async Task<EOIResumeLiveSearchResponse> ResumeLiveSearch(EOIResumeLiveSearchInputs inputs)
+        {
+            return new EOIResumeLiveSearchResponse(await ResumeLiveSearch((EOIUpdateLiveSearchInputs)inputs));
+        }
+
+        [Obsolete("Use CancelLiveSearch with EOIUpdateLiveSearchInputs.")]
+        public async Task<EOICancelLiveSearchResponse> CancelLiveSearch(EOICancelLiveSearchInputs inputs)
+        {
+            return new EOICancelLiveSearchResponse(await CancelLiveSearch((EOIUpdateLiveSearchInputs)inputs));
+        }
+
+        public async Task<EOIUpdateConfigResponse> UpdateConfig(EOIUpdateConfigInputs inputs)
+        {
+            EOIUpdateConfigResponse updateConfigResponse = new EOIUpdateConfigResponse(EOIResponse.CreateSuccess());
+
+            string endPoint = $"{baseUrl}{"/update_config"}";
+
+            try
+            {
+                var options = new JsonSerializerOptions
+                {
+                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                };
+
+                var jsonData = JsonSerializer.Serialize(inputs?.Body, options);
+
+                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                updateConfigResponse = new EOIUpdateConfigResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"UpdateConfig: Exception: {exc.Message}");
+                updateConfigResponse = new EOIUpdateConfigResponse(false, exc.Message);
+            }
+
+            return updateConfigResponse;
         }
 
         public async Task<EOIGetFacerecGroupsResponse> GetFacerecGroups()
@@ -652,7 +706,7 @@ namespace EyesOnItSDK
         }
         public async Task<EOIBaseOutputs> AddFacerecGroup(EOIAddFacerecGroupInputs inputs)
         {
-            EOIBaseOutputs addFacerecGroupResponse = new EOIBaseOutputs(EOIValidation.ValidateNewFacerecGroup(inputs));
+            EOIBaseOutputs addFacerecGroupResponse = new EOIBaseOutputs(EOIValidator.ValidateNewFacerecGroup(inputs));
 
             if (addFacerecGroupResponse.Success)
             {
@@ -682,7 +736,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIRemoveFacerecGroupResponse> RemoveFacerecGroup(string groupId)
         {
-            EOIRemoveFacerecGroupResponse removeFacerecGroupResponse = new EOIRemoveFacerecGroupResponse(EOIValidation.ValidateRemoveFacerecGroupInputs(groupId));
+            EOIRemoveFacerecGroupResponse removeFacerecGroupResponse = new EOIRemoveFacerecGroupResponse(EOIValidator.ValidateRemoveFacerecGroupInputs(groupId));
 
             if (removeFacerecGroupResponse.Success)
             {
@@ -707,7 +761,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIBaseOutputs> AddFacerecPerson(EOIAddFacerecPersonInputs inputs)
         {
-            EOIBaseOutputs addFacerecPersonResponse = new EOIBaseOutputs(EOIValidation.ValidateNewFacerecPerson(inputs));
+            EOIBaseOutputs addFacerecPersonResponse = new EOIBaseOutputs(EOIValidator.ValidateNewFacerecPerson(inputs));
 
             if (addFacerecPersonResponse.Success)
             {
@@ -737,7 +791,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIBaseOutputs> AddFacerecPeople(EOIAddFacerecPeopleInputs inputs)
         {
-            EOIBaseOutputs addFacerecPeopleResponse = new EOIBaseOutputs(EOIValidation.ValidateAddFacerecPeople(inputs));
+            EOIBaseOutputs addFacerecPeopleResponse = new EOIBaseOutputs(EOIValidator.ValidateAddFacerecPeople(inputs));
 
             if (addFacerecPeopleResponse.Success)
             {
@@ -767,7 +821,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIBaseOutputs> RemoveFacerecPerson(string personId)
         {
-            EOIBaseOutputs removeFacerecPersonResponse = new EOIBaseOutputs(EOIValidation.ValidateRemoveFacerecPersonInputs(personId));
+            EOIBaseOutputs removeFacerecPersonResponse = new EOIBaseOutputs(EOIValidator.ValidateRemoveFacerecPersonInputs(personId));
 
             if (removeFacerecPersonResponse.Success)
             {
@@ -792,7 +846,7 @@ namespace EyesOnItSDK
 
         public async Task<EOISearchFacerecNamesResponse> SearchFacerecGroupNames(String search)
         {
-            EOISearchFacerecNamesResponse searchResponse = new EOISearchFacerecNamesResponse(EOIValidation.ValidateFacerecGroupNameSearch(search));
+            EOISearchFacerecNamesResponse searchResponse = new EOISearchFacerecNamesResponse(EOIValidator.ValidateFacerecGroupNameSearch(search));
 
             if (searchResponse.Success)
             {
@@ -816,7 +870,7 @@ namespace EyesOnItSDK
 
         public async Task<EOISearchFacerecNamesResponse> SearchFacerecPeopleNames(String search)
         {
-            EOISearchFacerecNamesResponse searchResponse = new EOISearchFacerecNamesResponse(EOIValidation.ValidateFacerecPeopleNameSearch(search));
+            EOISearchFacerecNamesResponse searchResponse = new EOISearchFacerecNamesResponse(EOIValidator.ValidateFacerecPeopleNameSearch(search));
 
             if (searchResponse.Success)
             {
@@ -840,7 +894,7 @@ namespace EyesOnItSDK
 
         public async Task<EOIFacerecPersonDetailsResponse> GetFacerecPersonDetails(String personId)
         {
-            EOIFacerecPersonDetailsResponse eoiFacerecPersonDetailsResponse = new EOIFacerecPersonDetailsResponse(EOIValidation.ValidateFacerecPersonDetailsInputs(personId));
+            EOIFacerecPersonDetailsResponse eoiFacerecPersonDetailsResponse = new EOIFacerecPersonDetailsResponse(EOIValidator.ValidateFacerecPersonDetailsInputs(personId));
 
             string endPoint = $"{baseUrl}{facerecPersonDetailsPath}";
 

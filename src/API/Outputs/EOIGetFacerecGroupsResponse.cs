@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace EyesOnItSDK.Data.Outputs
+namespace EyesOnItSDK.API.Outputs
 {
     public class EOIGetFacerecGroupsResponse : EOIBaseOutputs
     {

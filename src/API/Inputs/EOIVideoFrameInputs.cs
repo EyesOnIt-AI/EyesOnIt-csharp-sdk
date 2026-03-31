@@ -1,14 +1,24 @@
-﻿using System.Text.Json.Serialization;
+﻿using System;
+using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Inputs
+namespace EyesOnItSDK.API.Inputs
 {
-    public class EOIGetVideoFrameInputs
+    public class EOIVideoFrameInputs
     {
         [JsonPropertyName("stream_url")]
         public string StreamUrl { get; set; }
 
-        public EOIGetVideoFrameInputs(string streamUrl) {
+        public EOIVideoFrameInputs(string streamUrl)
+        {
             StreamUrl = streamUrl;
+        }
+    }
+
+    [Obsolete("Use EOIVideoFrameInputs.")]
+    public class EOIGetVideoFrameInputs : EOIVideoFrameInputs
+    {
+        public EOIGetVideoFrameInputs(string streamUrl) : base(streamUrl)
+        {
         }
     }
 }

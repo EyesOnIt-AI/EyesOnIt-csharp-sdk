@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
     public class EOIBoundingBox
     {
@@ -15,6 +15,10 @@ namespace EyesOnItSDK.Data.Elements
 
         [JsonPropertyName("height")]
         public int Height { get; set; }
+
+        public int Right => Left + Width;
+
+        public int Bottom => Top + Height;
 
         public EOIBoundingBox(int left, int top, int width, int height)
         {

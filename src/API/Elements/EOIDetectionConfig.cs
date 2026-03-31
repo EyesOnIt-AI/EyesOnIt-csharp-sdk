@@ -1,7 +1,7 @@
-﻿using EyesOnItSDK.Data.Elements.VMS;
+﻿using EyesOnItSDK.API.Elements.VMS;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
     public class EOIDetectionConfig
     {

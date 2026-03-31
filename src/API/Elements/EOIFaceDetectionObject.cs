@@ -4,7 +4,7 @@ using System;
 using System.IO;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
     public class EOIFaceDetectionObject
     {

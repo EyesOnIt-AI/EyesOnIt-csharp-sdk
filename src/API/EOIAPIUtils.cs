@@ -1,23 +1,21 @@
-﻿using EyesOnItSDK.Data.Elements;
-using EyesOnItSDK.Data.Inputs;
+﻿using EyesOnItSDK.API.Elements;
+using EyesOnItSDK.API.Inputs;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
-using System.Text.Json.Serialization;
 using System.Text.Json;
-using System.Threading.Tasks;
-using EyesOnItSDK.Data.Outputs;
+using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK
+namespace EyesOnItSDK.API
 {
     public class EOIAPIUtils
     {
         private static int MIN_REGION_WIDTH = 224;
         private static int MIN_REGION_HEIGHT = 224;
 
-        private EyesOnItSDK.EyesOnIt eoiAPI;
+        private readonly EyesOnItAPI eoiAPI;
 
-        public EOIAPIUtils(EyesOnIt eoiAPI)
+        public EOIAPIUtils(EyesOnItAPI eoiAPI)
         {
             this.eoiAPI = eoiAPI;
         }

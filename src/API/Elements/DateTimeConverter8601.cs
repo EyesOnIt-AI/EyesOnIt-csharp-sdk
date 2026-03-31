@@ -4,7 +4,7 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
     public class DateTimeConverterUsingIso8601 : JsonConverter<DateTime>
     {

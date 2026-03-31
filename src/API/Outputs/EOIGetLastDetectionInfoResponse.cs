@@ -1,9 +1,9 @@
-﻿using EyesOnItSDK.Data.Elements;
+﻿using EyesOnItSDK.API.Elements;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace EyesOnItSDK.Data.Outputs
+namespace EyesOnItSDK.API.Outputs
 {
     public class EOIGetLastDetectionInfoResponse: EOIBaseOutputs
     {

@@ -2,7 +2,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
     public class EOISearchResult
     {
@@ -25,7 +25,7 @@ namespace EyesOnItSDK.Data.Elements
         public string StreamName { get; set; }
 
         [JsonPropertyName("region")]
-        public string RegionName { get; set; }
+        public string Region { get; set; }
 
         [JsonPropertyName("class_name")]
         public string ClassName { get; set; }
@@ -38,6 +38,12 @@ namespace EyesOnItSDK.Data.Elements
 
         [JsonPropertyName("image")]
         public string Image { get; set; }
+
+        [JsonPropertyName("facerec_person_id")]
+        public string FacerecPersonId { get; set; }
+
+        [JsonPropertyName("facerec_person_display_name")]
+        public string FacerecPersonDisplayName { get; set; }
 
         public EOISearchResult()
         {

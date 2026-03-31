@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
     public class EOIGenetecNotification
     {

@@ -1,4 +1,4 @@
-﻿namespace EyesOnItSDK.Data.Outputs
+﻿namespace EyesOnItSDK.API.Outputs
 {
     public class EOIStopMonitoringStreamResponse: EOIBaseOutputs
     {

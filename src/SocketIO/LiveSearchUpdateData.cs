@@ -1,5 +1,5 @@
 ﻿// SocketClient.cs
-using EyesOnItSDK.Data.Elements;
+using EyesOnItSDK.API.Elements;
 using Newtonsoft.Json;
 using System;
 using System.Text.Json.Serialization;

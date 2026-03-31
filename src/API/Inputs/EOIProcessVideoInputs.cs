@@ -1,16 +1,19 @@
 ﻿using System;
 using System.Text.Json.Serialization;
-using EyesOnItSDK.Data.Elements;
+using EyesOnItSDK.API.Elements;
 
-namespace EyesOnItSDK.Data.Inputs
+namespace EyesOnItSDK.API.Inputs
 {
-    public class EOIProcessVideosInputs : EOIBaseVideoInputs
+    public class EOIProcessVideoInputs : EOIBaseVideoInputs
     {
-        [JsonPropertyName("input_video_path_list")]
-        public string[] InputVideoFiles { get; set; }
+        [JsonPropertyName("input_video_path")]
+        public string InputVideoPath { get; set; }
+
+        [JsonPropertyName("rotate_video")]
+        public int RotateVideo { get; set; }
 
         [JsonPropertyName("output_video_path")]
-        public string OutputVideoFile { get; set; }
+        public string OutputVideoPath { get; set; }
 
         [JsonPropertyName("real_time")]
         public bool RealTime { get; set; }
@@ -30,28 +33,40 @@ namespace EyesOnItSDK.Data.Inputs
         [JsonPropertyName("video_start_local_time")]
         public string VideoStartLocalTime { get; set; }
 
+        [JsonPropertyName("mode")]
+        public string Mode { get; set; }
 
+        [JsonPropertyName("base_image_path")]
+        public string BaseImagePath { get; set; }
 
-        public EOIProcessVideosInputs() : base()
+        [JsonPropertyName("plugins")]
+        public object Plugins { get; set; }
+
+        [JsonPropertyName("validation")]
+        public EOIValidation Validation { get; set; }
+
+        public EOIProcessVideoInputs() : base()
         {
-            this.InputVideoFiles = new string[] { };
-            this.OutputVideoFile = null;
+            InputVideoPath = null;
+            OutputVideoPath = null;
+            Mode = "KNOWN_OBJECT_DETECTION";
         }
 
-        public EOIProcessVideosInputs(
-            string[] videoFiles,
-            string outputFile,
+        public EOIProcessVideoInputs(
+            string inputVideoPath,
+            string outputVideoPath,
             EOIRegion[] regions,
-            int frame_rate,
+            int frameRate,
             EOIEffects effects) : base()
         {
-            this.Regions = regions;
-            this.InputVideoFiles = videoFiles;
-            this.OutputVideoFile= outputFile;
-            this.FrameRate = frame_rate;
-            this.Effects = effects;
-            this.IndexForSearch = false;
-            this.SearchIndexTypes = new string[] { };
+            Regions = regions;
+            InputVideoPath = inputVideoPath;
+            OutputVideoPath = outputVideoPath;
+            FrameRate = frameRate;
+            Effects = effects;
+            IndexForSearch = false;
+            SearchIndexTypes = Array.Empty<string>();
+            Mode = "KNOWN_OBJECT_DETECTION";
         }
     }
 }

@@ -1,8 +1,8 @@
-﻿using EyesOnItSDK.Data.Elements;
+﻿using EyesOnItSDK.API.Elements;
 using System.Collections.Generic;
 using System.Text.Json;
 
-namespace EyesOnItSDK.Data.Outputs
+namespace EyesOnItSDK.API.Outputs
 {
     public class EOISearchResponse : EOIBaseOutputs
     {

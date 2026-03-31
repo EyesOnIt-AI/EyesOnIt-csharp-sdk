@@ -1,4 +1,6 @@
-﻿namespace EyesOnItSDK.Data.Outputs
+﻿using EyesOnItSDK.API;
+
+namespace EyesOnItSDK.API.Outputs
 {
     public class EOIBaseOutputs
     {

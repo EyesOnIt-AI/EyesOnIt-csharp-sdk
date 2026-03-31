@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK
+namespace EyesOnItSDK.API
 {
     public class EOIMessage
     {

@@ -1,11 +1,12 @@
-﻿using EyesOnItSDK.Data.Elements;
+﻿using EyesOnItSDK.API;
+using EyesOnItSDK.API.Elements;
 using System.Text.Json;
 
-namespace EyesOnItSDK.Data.Outputs
+namespace EyesOnItSDK.API.Outputs
 {
     public class EOIGetStreamDetailsResponse : EOIBaseOutputs
     {
-        public EOIStreamDetails Stream { get; set; }
+        public EOIStreamInfo Stream { get; set; }
 
         internal EOIGetStreamDetailsResponse(EOIMessage eoiMessage) : base(eoiMessage)
         {
@@ -17,7 +18,7 @@ namespace EyesOnItSDK.Data.Outputs
                 if (dataElement.TryGetProperty("stream", out JsonElement streamElement))
                 {
                     // Deserialize the stream part
-                    Stream = JsonSerializer.Deserialize<EOIStreamDetails>(streamElement.GetRawText());
+                    Stream = JsonSerializer.Deserialize<EOIStreamInfo>(streamElement.GetRawText());
                 }
             }
         }

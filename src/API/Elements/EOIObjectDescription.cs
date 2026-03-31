@@ -1,9 +1,12 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements
+namespace EyesOnItSDK.API.Elements
 {
     public class EOIObjectDescription
     {
+        [JsonPropertyName("display_text")]
+        public string DisplayText { get; set; }
+
         [JsonPropertyName("text")]
         public string Text { get; set; }
         
@@ -20,7 +23,7 @@ namespace EyesOnItSDK.Data.Elements
         public bool? OverThreshold { get; set; }
 
         [JsonPropertyName("background_prompt")]
-        public bool BackgroundDescription { get; set; }
+        public bool BackgroundPrompt { get; set; }
 
         public EOIObjectDescription()
         {
@@ -28,14 +31,14 @@ namespace EyesOnItSDK.Data.Elements
             this.Threshold = null;
             this.Confidence = null;
             this.OverThreshold = null;
-            this.BackgroundDescription = false;
+            this.BackgroundPrompt = false;
         }
 
-        public EOIObjectDescription(string text, bool backgroundDescription) 
+        public EOIObjectDescription(string text, bool backgroundPrompt) 
         {
-            this.Text = text;
-            this.BackgroundDescription = backgroundDescription;
-            this.Threshold = null;
+            Text = text;
+            BackgroundPrompt = backgroundPrompt;
+            Threshold = null;
         }
     }
 }

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Outputs
+namespace EyesOnItSDK.API.Outputs
 {
     public class EOISearchFacerecNamesResult
     {

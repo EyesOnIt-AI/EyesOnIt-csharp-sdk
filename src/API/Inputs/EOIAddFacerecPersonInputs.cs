@@ -1,9 +1,9 @@
-using EyesOnItSDK.Data.Elements;
+using EyesOnItSDK.API.Elements;
 using System;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Inputs
+namespace EyesOnItSDK.API.Inputs
 {
     public class EOIAddFacerecPersonImage
     {

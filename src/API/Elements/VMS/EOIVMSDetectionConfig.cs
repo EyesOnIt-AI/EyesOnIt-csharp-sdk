@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Elements.VMS
+namespace EyesOnItSDK.API.Elements.VMS
 {
     public class EOIVMSDetectionConfig
     {

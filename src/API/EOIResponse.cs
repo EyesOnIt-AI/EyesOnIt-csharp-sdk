@@ -1,37 +1,28 @@
-﻿using EyesOnItSDK.Data.Inputs;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Text.Json;
-using System.Threading.Tasks;
 
-namespace EyesOnItSDK
+namespace EyesOnItSDK.API
 {
     public class EOIResponse
     {
         public bool Success { get; set; }
         public string Message { get; set; }
-        //public string Detail { get; set; }
-        //public object Data { get; set; }
-        //public Dictionary<string, int> ConfidenceLevels { get; set; }
-        //public string[] BoundingBoxObjects { get; set; }
-        //public string Image { get; set; }
+        public object Data { get; set; }
 
-        internal EOIResponse(bool success, string message)
+        public EOIResponse(bool success, string message = null)
         {
-            this.Success = success;
-            this.Message = message;
+            Success = success;
+            Message = message;
         }
 
-        internal static EOIResponse DefaultFailure()
+        public static EOIResponse Failure()
         {
             return new EOIResponse(false, "Unknown error");
         }
 
-        internal static EOIResponse DefaultSuccess()
+        public static EOIResponse CreateSuccess()
         {
-            return new EOIResponse(true, null);
+            return new EOIResponse(true);
         }
 
         public string ToJson()
@@ -46,9 +37,14 @@ namespace EyesOnItSDK
             return jsonData;
         }
 
-        internal static EOIResponse FromJSON(string strResponse)
+        internal static EOIResponse DefaultFailure()
         {
-            return new EOIResponse(true, null);
+            return Failure();
+        }
+
+        internal static EOIResponse DefaultSuccess()
+        {
+            return CreateSuccess();
         }
     }
 }

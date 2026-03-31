@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Inputs
+namespace EyesOnItSDK.API.Inputs
 {
     public class EOIMonitorStreamInputs {
         [JsonPropertyName("stream_url")]

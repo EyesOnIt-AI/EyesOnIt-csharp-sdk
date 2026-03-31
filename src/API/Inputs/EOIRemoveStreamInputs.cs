@@ -1,6 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 
-namespace EyesOnItSDK.Data.Inputs
+namespace EyesOnItSDK.API.Inputs
 {
     public class EOIRemoveStreamInputs
     {
