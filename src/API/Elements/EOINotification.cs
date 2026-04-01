@@ -14,7 +14,6 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("phone_number")]
         public string PhoneNumber { get; set; }
 
-        [Obsolete("Genetec-specific notification configuration is not part of the canonical TypeScript SDK surface.")]
         [JsonPropertyName("genetec")]
         public EOIGenetecNotification GenetecNotification { get; set; }
 
