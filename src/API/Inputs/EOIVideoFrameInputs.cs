@@ -13,12 +13,4 @@ namespace EyesOnItSDK.API.Inputs
             StreamUrl = streamUrl;
         }
     }
-
-    [Obsolete("Use EOIVideoFrameInputs.")]
-    public class EOIGetVideoFrameInputs : EOIVideoFrameInputs
-    {
-        public EOIGetVideoFrameInputs(string streamUrl) : base(streamUrl)
-        {
-        }
-    }
 }

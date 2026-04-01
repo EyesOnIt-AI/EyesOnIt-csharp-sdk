@@ -23,7 +23,6 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("include_image")]
         public bool IncludeImage { get; set; }
 
-        [Obsolete("Count notifications are not part of the canonical TypeScript SDK surface.")]
         [JsonPropertyName("include_count")]
         public bool IncludeCount { get; set; }
     }

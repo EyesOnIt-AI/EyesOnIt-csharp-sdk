@@ -42,12 +42,4 @@ namespace EyesOnItSDK.API.Inputs
             return updateLiveSearchInputs;
         }
     }
-
-    [Obsolete("Use EOIUpdateLiveSearchInputs.")]
-    public class EOIPauseLiveSearchInputs : EOIUpdateLiveSearchInputs
-    {
-        public EOIPauseLiveSearchInputs(int searchId) : base(searchId)
-        {
-        }
-    }
 }

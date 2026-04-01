@@ -66,54 +66,9 @@ namespace EyesOnItSDK.API
                 handler.UseProxy);
         }
 
-        [Obsolete("Use the constructor argument or store the API base path in your application.")]
         public string GetBaseUrl()
         {
             return this.baseUrl;
-        }
-
-        [Obsolete("Use ProcessImage with EOIProcessImageInputs.")]
-        public async Task<EOIProcessImageResponse> ProcessImageFromFile(string filePath, EOIRegion[] regions)
-        {
-            return await this.ProcessImageFromFile(
-                new EOIProcessImageInputs(null, regions), 
-                filePath);
-        }
-
-        [Obsolete("Use ProcessImage with EOIProcessImageInputs.")]
-        public async Task<EOIProcessImageResponse> ProcessImageFromFile(EOIProcessImageInputs inputs, string filePath)
-        {
-            EOIProcessImageResponse eoiProcessImageResponse = new EOIProcessImageResponse(EOIValidator.ValidateProcessImageInputs(inputs));
-
-            if (eoiProcessImageResponse.Success)
-            {
-                if (filePath == null || filePath.Length == 0)
-                {
-                    eoiProcessImageResponse = new EOIProcessImageResponse(false, $"filePath must not be null or empty.filePath = {filePath}");
-                }
-            }
-
-            if (eoiProcessImageResponse.Success && filePath != null)
-            {
-                // Read the image file as a byte array
-                byte[] imageBytes = File.ReadAllBytes(filePath);
-
-                // Convert the byte array to a Base64 encoded string
-                string base64String = Convert.ToBase64String(imageBytes);
-
-                EOIProcessImageInputs inputsWithImage = new EOIProcessImageInputs(base64String, inputs.Regions);
-
-                eoiProcessImageResponse = await this.ProcessImage(inputsWithImage);
-            }
-
-            return eoiProcessImageResponse;
-        }
-
-        public async Task<EOIProcessImageResponse> ProcessImage(string base64Image, EOIRegion[] regions)
-        {
-            EOIProcessImageInputs inputs = new EOIProcessImageInputs(base64Image, regions);
-
-            return await this.ProcessImage(inputs);
         }
 
         public async Task<EOIProcessImageResponse> ProcessImage(EOIProcessImageInputs inputs)
@@ -205,7 +160,6 @@ namespace EyesOnItSDK.API
             return eoiGetStreamDetailsResponse;
         }
 
-        [Obsolete("This endpoint is not part of the canonical TypeScript SDK surface.")]
         public async Task<EOIGetSupportedClassesResponse> GetSupportedClasses()
         {
             EOIGetSupportedClassesResponse getSupportedClassesResponse;
@@ -636,24 +590,6 @@ namespace EyesOnItSDK.API
             }
 
             return cancelLiveSearchResponse;
-        }
-
-        [Obsolete("Use PauseLiveSearch with EOIUpdateLiveSearchInputs.")]
-        public async Task<EOIPauseLiveSearchResponse> PauseLiveSearch(EOIPauseLiveSearchInputs inputs)
-        {
-            return new EOIPauseLiveSearchResponse(await PauseLiveSearch((EOIUpdateLiveSearchInputs)inputs));
-        }
-
-        [Obsolete("Use ResumeLiveSearch with EOIUpdateLiveSearchInputs.")]
-        public async Task<EOIResumeLiveSearchResponse> ResumeLiveSearch(EOIResumeLiveSearchInputs inputs)
-        {
-            return new EOIResumeLiveSearchResponse(await ResumeLiveSearch((EOIUpdateLiveSearchInputs)inputs));
-        }
-
-        [Obsolete("Use CancelLiveSearch with EOIUpdateLiveSearchInputs.")]
-        public async Task<EOICancelLiveSearchResponse> CancelLiveSearch(EOICancelLiveSearchInputs inputs)
-        {
-            return new EOICancelLiveSearchResponse(await CancelLiveSearch((EOIUpdateLiveSearchInputs)inputs));
         }
 
         public async Task<EOIUpdateConfigResponse> UpdateConfig(EOIUpdateConfigInputs inputs)
