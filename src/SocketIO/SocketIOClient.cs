@@ -3,6 +3,7 @@ using Serilog;
 using SocketIOClient;
 using SocketIO.Serializer.NewtonsoftJson;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -16,6 +17,8 @@ namespace EyesOnItSDK.SocketIO
         private readonly string url;
         private readonly SocketIOOptions options;
         private readonly object syncRoot = new object();
+        private readonly object joinedRoomsSyncRoot = new object();
+        private readonly HashSet<string> joinedRooms = new HashSet<string>(StringComparer.Ordinal);
         private static int systemTextJsonResolverInitialized;
         private SocketIOClient.SocketIO socket;
         private bool handlersRegistered;
@@ -91,8 +94,35 @@ namespace EyesOnItSDK.SocketIO
                 return;
             }
 
-            var currentSocket = EnsureConnectedSocket();
+            RememberJoinedRoom(room);
+
+            var currentSocket = socket;
+            if (currentSocket == null || !currentSocket.Connected)
+            {
+                return;
+            }
+
             await currentSocket.EmitAsync("subscribe", room).ConfigureAwait(false);
+        }
+
+        public async Task JoinRoomsAsync(IEnumerable<string> rooms)
+        {
+            if (rooms == null)
+            {
+                return;
+            }
+
+            foreach (var room in rooms)
+            {
+                await JoinRoomAsync(room).ConfigureAwait(false);
+            }
+        }
+
+        public async Task<string> JoinLiveSearchDetectionsAsync(int searchId)
+        {
+            var room = EOISocketRooms.LiveSearchDetectionsForSearch(searchId);
+            await JoinRoomAsync(room).ConfigureAwait(false);
+            return room;
         }
 
         public async Task LeaveRoomAsync(string room)
@@ -102,7 +132,14 @@ namespace EyesOnItSDK.SocketIO
                 return;
             }
 
-            var currentSocket = EnsureConnectedSocket();
+            ForgetJoinedRoom(room);
+
+            var currentSocket = socket;
+            if (currentSocket == null || !currentSocket.Connected)
+            {
+                return;
+            }
+
             await currentSocket.EmitAsync("unsubscribe", room).ConfigureAwait(false);
         }
 
@@ -213,12 +250,13 @@ namespace EyesOnItSDK.SocketIO
 
         private void RegisterLifecycleHandlers()
         {
-            socket.OnConnected += (sender, args) =>
+            socket.OnConnected += async (sender, args) =>
             {
                 Log.Debug("SocketIOClient: Connected to server");
 
                 try
                 {
+                    await RejoinRoomsAsync().ConfigureAwait(false);
                     OnConnected?.Invoke();
                 }
                 catch (Exception ex)
@@ -230,6 +268,44 @@ namespace EyesOnItSDK.SocketIO
             socket.OnError += (sender, message) => Log.Error($"SocketIOClient: Error: {message}");
             socket.OnDisconnected += (sender, reason) => Log.Warning($"SocketIOClient: Disconnected: {reason}");
             socket.OnAny((eventName, response) => Log.Debug($"SocketIOClient: Event: {eventName}, Data: {response}"));
+        }
+
+        private void RememberJoinedRoom(string room)
+        {
+            lock (joinedRoomsSyncRoot)
+            {
+                joinedRooms.Add(room);
+            }
+        }
+
+        private void ForgetJoinedRoom(string room)
+        {
+            lock (joinedRoomsSyncRoot)
+            {
+                joinedRooms.Remove(room);
+            }
+        }
+
+        private async Task RejoinRoomsAsync()
+        {
+            SocketIOClient.SocketIO currentSocket;
+            string[] rooms;
+
+            lock (joinedRoomsSyncRoot)
+            {
+                currentSocket = socket;
+                rooms = joinedRooms.ToArray();
+            }
+
+            if (currentSocket == null || !currentSocket.Connected || rooms.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var room in rooms)
+            {
+                await currentSocket.EmitAsync("subscribe", room).ConfigureAwait(false);
+            }
         }
 
         private void RegisterEventHandlers()
