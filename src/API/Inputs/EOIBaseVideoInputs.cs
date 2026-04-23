@@ -8,6 +8,12 @@ namespace EyesOnItSDK.API.Inputs
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
+        [JsonPropertyName("frame_width")]
+        public int? FrameWidth { get; set; }
+
+        [JsonPropertyName("frame_height")]
+        public int? FrameHeight { get; set; }
+
         [JsonPropertyName("frame_rate")]
         public int? FrameRate { get; set; }
 

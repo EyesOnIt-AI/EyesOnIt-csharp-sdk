@@ -20,7 +20,9 @@ namespace EyesOnItSDK.API.Inputs
         }
 
         public EOIAddStreamInputs(string streamUrl, 
-            string name, 
+            string name,
+            int frameWidth,
+            int frameHeight,
             int frameRate, 
             EOIRegion[] regions,
             EOILine[] lines,
@@ -32,6 +34,8 @@ namespace EyesOnItSDK.API.Inputs
         {
             this.StreamUrl = streamUrl;
             this.Name = name;
+            this.FrameWidth = frameWidth;
+            this.FrameHeight = frameHeight;
             this.FrameRate = frameRate;
             this.Regions = regions;
             this.Lines = lines;

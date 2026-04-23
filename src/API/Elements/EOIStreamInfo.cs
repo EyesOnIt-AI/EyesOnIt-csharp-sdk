@@ -18,6 +18,12 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("frame_rate")]
         public int? FrameRate { get; set; }
 
+        [JsonPropertyName("frame_width")]
+        public int? FrameWidth { get; set; }
+
+        [JsonPropertyName("frame_height")]
+        public int? FrameHeight { get; set; }
+
         [JsonPropertyName("index_for_search")]
         public bool IndexForSearch { get; set; }
 

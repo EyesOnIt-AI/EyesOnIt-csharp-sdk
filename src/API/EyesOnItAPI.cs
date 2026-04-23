@@ -885,62 +885,98 @@ namespace EyesOnItSDK.API
 
         private async Task<EOIMessage> PostAsync(string endpoint, string jsonString)
         {
-            EOIMessage eoiMessage = null;
+            const int maxAttempts = 2;
             var requestStopwatch = Stopwatch.StartNew();
 
-            try
+            for (int attempt = 1; attempt <= maxAttempts; attempt++)
             {
-                var requestUri = new Uri(endpoint);
-                var servicePoint = ServicePointManager.FindServicePoint(requestUri);
-                Log.Information(
-                    "PostAsync: dispatching POST to {Endpoint}. ConnectionLimit={ConnectionLimit}, CurrentConnections={CurrentConnections}",
-                    endpoint,
-                    servicePoint?.ConnectionLimit ?? -1,
-                    servicePoint?.CurrentConnections ?? -1);
-                Log.Debug($"PostAsync: posting to {endpoint}. JSON = {jsonString}");
-
-                using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
+                EOIMessage eoiMessage = null;
+                try
                 {
-                    request.Headers.ExpectContinue = false;
-                    request.Content = new StringContent(jsonString, Encoding.UTF8, "application/json");
+                    var requestUri = new Uri(endpoint);
+                    var servicePoint = ServicePointManager.FindServicePoint(requestUri);
+                    Log.Information(
+                        "PostAsync: dispatching POST to {Endpoint} (attempt {Attempt}). ConnectionLimit={ConnectionLimit}, CurrentConnections={CurrentConnections}",
+                        endpoint,
+                        attempt,
+                        servicePoint?.ConnectionLimit ?? -1,
+                        servicePoint?.CurrentConnections ?? -1);
+                    Log.Debug($"PostAsync: posting to {endpoint}. JSON = {jsonString}");
 
-                    using (HttpResponseMessage httpResponse = await httpClient.SendAsync(
-                        request,
-                        HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                    using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
                     {
-                        Log.Information(
-                            "PostAsync: response headers received from {Endpoint} after {ElapsedMilliseconds} ms. StatusCode={StatusCode}",
-                            endpoint,
-                            requestStopwatch.ElapsedMilliseconds,
-                            (int)httpResponse.StatusCode);
+                        request.Headers.ExpectContinue = false;
+                        request.Content = new StringContent(jsonString, Encoding.UTF8, "application/json");
 
-                        string responseContent = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
+                        using (HttpResponseMessage httpResponse = await httpClient.SendAsync(
+                            request,
+                            HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
+                        {
+                            Log.Information(
+                                "PostAsync: response headers received from {Endpoint} after {ElapsedMilliseconds} ms. StatusCode={StatusCode}",
+                                endpoint,
+                                requestStopwatch.ElapsedMilliseconds,
+                                (int)httpResponse.StatusCode);
 
-                        string responseNoImage = this.RemoveImageProperties(responseContent);
-                        Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseNoImage}");
+                            string responseContent = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                        eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
+                            string responseNoImage = this.RemoveImageProperties(responseContent);
+                            Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseNoImage}");
 
-                        httpResponse.EnsureSuccessStatusCode();
+                            eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
+
+                            httpResponse.EnsureSuccessStatusCode();
+                        }
+                    }
+
+                    return eoiMessage;
+                }
+                catch (HttpRequestException exc) when (attempt < maxAttempts && IsStaleConnectionError(exc))
+                {
+                    Log.Warning(
+                        $"PostAsync: stale keep-alive connection on attempt {attempt} after {requestStopwatch.ElapsedMilliseconds} ms; retrying. {exc.InnerException?.Message ?? exc.Message}");
+                }
+                catch (HttpRequestException exc)
+                {
+                    string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
+                    Log.Error($"PostAsync: HttpRequestException after {requestStopwatch.ElapsedMilliseconds} ms: {exc.Message} {innerExcMsg}");
+                    return new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
+                }
+                catch (Exception exc)
+                {
+                    string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
+                    Log.Error($"PostAsync: Generic Exception after {requestStopwatch.ElapsedMilliseconds} ms: {exc.Message} {innerExcMsg}");
+                    return new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
+                }
+            }
+
+            return new EOIMessage(false, "Request failed after retries");
+        }
+
+        private static bool IsStaleConnectionError(Exception ex)
+        {
+            for (var current = ex; current != null; current = current.InnerException)
+            {
+                if (current is WebException webEx &&
+                    (webEx.Status == WebExceptionStatus.KeepAliveFailure ||
+                     webEx.Status == WebExceptionStatus.ConnectionClosed))
+                {
+                    return true;
+                }
+
+                if (current is IOException ioEx)
+                {
+                    var msg = ioEx.Message ?? string.Empty;
+                    if (msg.IndexOf("connection was closed", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        msg.IndexOf("forcibly closed", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        msg.IndexOf("connection closed", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        return true;
                     }
                 }
             }
-            catch (HttpRequestException exc)
-            {
-                string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
-                Log.Error($"PostAsync: HttpRequestException after {requestStopwatch.ElapsedMilliseconds} ms: {exc.Message} {innerExcMsg}");
 
-                eoiMessage = new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
-            }
-            catch (Exception exc)
-            {
-                string innerExcMsg = exc.InnerException == null ? "" : exc.InnerException.Message;
-                Log.Error($"PostAsync: Generic Exception after {requestStopwatch.ElapsedMilliseconds} ms: {exc.Message} {innerExcMsg}");
-
-                eoiMessage = new EOIMessage(false, $"{exc.Message} {innerExcMsg}");
-            }
-
-            return eoiMessage;
+            return false;
         }
 
         private static HttpClientHandler CreateHttpClientHandler(Uri baseUri)

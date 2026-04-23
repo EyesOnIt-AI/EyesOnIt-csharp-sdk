@@ -18,7 +18,10 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("file")]
         public string File { get; set; }
 
-        [JsonPropertyName("stream")]
+        [JsonPropertyName("source")]
+        public string Source { get; set; }
+
+        [JsonPropertyName("stream_url")]
         public string Stream { get; set; }
 
         [JsonPropertyName("stream_name")]

@@ -56,12 +56,16 @@ namespace EyesOnItSDK.API.Inputs
             string inputVideoPath,
             string outputVideoPath,
             EOIRegion[] regions,
+            int frameWidth,
+            int frameHeight,
             int frameRate,
             EOIEffects effects) : base()
         {
             Regions = regions;
             InputVideoPath = inputVideoPath;
             OutputVideoPath = outputVideoPath;
+            FrameWidth = frameWidth;
+            FrameHeight = frameHeight;
             FrameRate = frameRate;
             Effects = effects;
             IndexForSearch = false;

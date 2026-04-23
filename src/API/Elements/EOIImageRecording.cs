@@ -17,6 +17,6 @@ namespace EyesOnItSDK.API.Elements
         public bool RecordAllFrames { get; set; }
 
         [JsonPropertyName("frame_record_interval")]
-        public int FrameRecordInterval { get; set; }
+        public int? FrameRecordInterval { get; set; }
     }
 }
