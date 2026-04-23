@@ -47,6 +47,10 @@ namespace EyesOnItSDK.SocketIO
         [JsonPropertyName("stream_url")] 
         public string StreamUrl { get; set; }
 
+        [JsonProperty("stream_id")]
+        [JsonPropertyName("stream_id")]
+        public string StreamId { get; set; }
+
         [JsonProperty("name")]
         [JsonPropertyName("name")]
         public string Name { get; set; }
