@@ -31,6 +31,9 @@ namespace EyesOnItSDK.SocketIO
         public delegate void CountUpdateHandler(object payload);
         public delegate void SubscribedHandler(SubscribedData payload);
         public delegate void ConnectedHandler();
+        public delegate void DisconnectedHandler(string reason);
+        public delegate void ReconnectedHandler(int attempts);
+        public delegate void TransportErrorHandler(string message);
 
         public event StreamUpdateHandler OnStreamUpdate;
         public event StreamDetectionHandler OnStreamDetection;
@@ -40,6 +43,9 @@ namespace EyesOnItSDK.SocketIO
         //public event CountUpdateHandler OnCountUpdate;
         public event SubscribedHandler OnSubscribed;
         public event ConnectedHandler OnConnected;
+        public event DisconnectedHandler OnDisconnected;
+        public event ReconnectedHandler OnReconnected;
+        public event TransportErrorHandler OnTransportError;
 
         public SocketClient(string url, SocketIOOptions options = null)
         {
@@ -265,8 +271,48 @@ namespace EyesOnItSDK.SocketIO
                 }
             };
 
-            socket.OnError += (sender, message) => Log.Error($"SocketIOClient: Error: {message}");
-            socket.OnDisconnected += (sender, reason) => Log.Warning($"SocketIOClient: Disconnected: {reason}");
+            socket.OnError += (sender, message) =>
+            {
+                Log.Error($"SocketIOClient: Error: {message}");
+
+                try
+                {
+                    OnTransportError?.Invoke(message);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: OnTransportError handler failed");
+                }
+            };
+
+            socket.OnDisconnected += (sender, reason) =>
+            {
+                Log.Warning($"SocketIOClient: Disconnected: {reason}");
+
+                try
+                {
+                    OnDisconnected?.Invoke(reason);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: OnDisconnected handler failed");
+                }
+            };
+
+            socket.OnReconnected += (sender, attempts) =>
+            {
+                Log.Information($"SocketIOClient: Reconnected after {attempts} attempt(s)");
+
+                try
+                {
+                    OnReconnected?.Invoke(attempts);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: OnReconnected handler failed");
+                }
+            };
+
             socket.OnAny((eventName, response) => Log.Debug($"SocketIOClient: Event: {eventName}, Data: {response}"));
         }
 
