@@ -6,3 +6,4 @@ obj
 .ncb
 Debug/
 Release/
+temp/

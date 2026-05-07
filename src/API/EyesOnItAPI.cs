@@ -47,6 +47,7 @@ namespace EyesOnItSDK.API
         private readonly string facerecAddPeoplePath = "/facerec_add_people";
         private readonly string facerecRemovePersonPath = "/facerec_remove_person";
         private readonly string facerecPersonDetailsPath = "/facerec_person_details";
+        private readonly string healthPath = "/health";
 
         public EyesOnItAPI(string baseUrl)
         {
@@ -69,6 +70,28 @@ namespace EyesOnItSDK.API
         public string GetBaseUrl()
         {
             return this.baseUrl;
+        }
+
+        public async Task<EOIHealthResponse> Health()
+        {
+            EOIHealthResponse healthResponse;
+
+            string endPoint = $"{baseUrl}{healthPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint);
+                healthResponse = new EOIHealthResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"Health: Exception: {exc.Message}");
+                healthResponse = new EOIHealthResponse(false, exc.Message);
+            }
+
+            return healthResponse;
         }
 
         public async Task<EOIProcessImageResponse> ProcessImage(EOIProcessImageInputs inputs)
