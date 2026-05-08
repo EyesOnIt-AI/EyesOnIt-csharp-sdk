@@ -4,10 +4,7 @@ using SocketIOClient;
 using SocketIO.Serializer.NewtonsoftJson;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace EyesOnItSDK.SocketIO
@@ -19,7 +16,6 @@ namespace EyesOnItSDK.SocketIO
         private readonly object syncRoot = new object();
         private readonly object joinedRoomsSyncRoot = new object();
         private readonly HashSet<string> joinedRooms = new HashSet<string>(StringComparer.Ordinal);
-        private static int systemTextJsonResolverInitialized;
         private SocketIOClient.SocketIO socket;
         private bool handlersRegistered;
 
@@ -28,7 +24,6 @@ namespace EyesOnItSDK.SocketIO
         public delegate void PerformanceUpdateHandler(PerformanceUpdateDataWrapper payload);
         public delegate void LiveSearchUpdateHandler(LiveSearchUpdateData[] payload);
         public delegate void LiveSearchDetectionHandler(StreamDetectionsData payload);
-        public delegate void CountUpdateHandler(object payload);
         public delegate void SubscribedHandler(SubscribedData payload);
         public delegate void ConnectedHandler();
         public delegate void DisconnectedHandler(string reason);
@@ -40,7 +35,6 @@ namespace EyesOnItSDK.SocketIO
         public event PerformanceUpdateHandler OnPerformanceUpdate;
         public event LiveSearchUpdateHandler OnLiveSearchUpdate;
         public event LiveSearchDetectionHandler OnLiveSearchDetection;
-        //public event CountUpdateHandler OnCountUpdate;
         public event SubscribedHandler OnSubscribed;
         public event ConnectedHandler OnConnected;
         public event DisconnectedHandler OnDisconnected;
@@ -55,8 +49,6 @@ namespace EyesOnItSDK.SocketIO
 
         public async Task ConnectAsync()
         {
-            EnsureSystemTextJsonAssemblyResolver();
-
             SocketIOClient.SocketIO currentSocket;
             lock (syncRoot)
             {
@@ -173,85 +165,6 @@ namespace EyesOnItSDK.SocketIO
             }
 
             return socket;
-        }
-
-        private static void EnsureSystemTextJsonAssemblyResolver()
-        {
-            if (Interlocked.Exchange(ref systemTextJsonResolverInitialized, 1) == 1)
-            {
-                return;
-            }
-
-            AppDomain.CurrentDomain.AssemblyResolve += ResolveSystemTextJsonAssembly;
-        }
-
-        private static Assembly ResolveSystemTextJsonAssembly(object sender, ResolveEventArgs args)
-        {
-            AssemblyName requestedAssemblyName;
-            try
-            {
-                requestedAssemblyName = new AssemblyName(args.Name);
-            }
-            catch
-            {
-                return null;
-            }
-
-            if (!string.Equals(requestedAssemblyName.Name, "System.Text.Json", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            var alreadyLoaded = AppDomain.CurrentDomain.GetAssemblies()
-                .FirstOrDefault(assembly =>
-                {
-                    try
-                    {
-                        return string.Equals(assembly.GetName().Name, "System.Text.Json", StringComparison.OrdinalIgnoreCase);
-                    }
-                    catch
-                    {
-                        return false;
-                    }
-                });
-            if (alreadyLoaded != null)
-            {
-                return alreadyLoaded;
-            }
-
-            var sdkDirectory = Path.GetDirectoryName(typeof(SocketClient).Assembly.Location);
-            var candidatePaths = new[]
-            {
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "System.Text.Json.dll"),
-                string.IsNullOrWhiteSpace(sdkDirectory) ? null : Path.Combine(sdkDirectory, "System.Text.Json.dll")
-            }
-            .Where(path => !string.IsNullOrWhiteSpace(path))
-            .Distinct(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var candidatePath in candidatePaths)
-            {
-                try
-                {
-                    if (!File.Exists(candidatePath))
-                    {
-                        continue;
-                    }
-
-                    var candidateAssemblyName = AssemblyName.GetAssemblyName(candidatePath);
-                    if (!string.Equals(candidateAssemblyName.Name, "System.Text.Json", StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
-
-                    return Assembly.LoadFrom(candidatePath);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "SocketIOClient: Failed loading System.Text.Json from {CandidatePath}", candidatePath);
-                }
-            }
-
-            return null;
         }
 
         private void RegisterLifecycleHandlers()
@@ -435,14 +348,6 @@ namespace EyesOnItSDK.SocketIO
                     Log.Error(ex, "SocketIOClient: Failed to handle live_search_detection");
                 }
             });
-
-            //socket.On("count_update", response =>
-            //{
-            //    Log.Debug($"SocketIOClient: count_update message received");
-
-            //    JsonElement jsonElement = response.GetValue<JsonElement>(0);
-            //    OnCountUpdate?.Invoke(jsonElement);
-            //});
 
             socket.On("subscribed", response =>
             {
