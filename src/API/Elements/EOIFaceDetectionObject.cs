@@ -1,5 +1,3 @@
-
-using Newtonsoft.Json;
 using System;
 using System.IO;
 using System.Text.Json.Serialization;
@@ -26,7 +24,6 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("group_display_name")]
         public string GroupDisplayName { get; set; }
 
-        [JsonProperty("image")]
         [JsonPropertyName("image")]
         public string Base64Image
         {
@@ -52,6 +49,7 @@ namespace EyesOnItSDK.API.Elements
 
         private string base64Image;
 
+        [JsonIgnore]
         public System.Drawing.Image Image { get; set; }
 
         public EOIFaceDetectionObject()

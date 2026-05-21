@@ -1,7 +1,6 @@
 // SocketClient.cs
 using Serilog;
 using SocketIOClient;
-using SocketIO.Serializer.NewtonsoftJson;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,9 +21,12 @@ namespace EyesOnItSDK.SocketIO
         public delegate void StreamUpdateHandler(StreamUpdateData[] payload);
         public delegate void StreamDetectionHandler(StreamDetectionsData payload);
         public delegate void PerformanceUpdateHandler(PerformanceUpdateDataWrapper payload);
+        public delegate void CountUpdateHandler(CountUpdateDataWrapper payload);
+        public delegate void VideoProcessingUpdateHandler(VideoProcessingUpdateData[] payload);
         public delegate void LiveSearchUpdateHandler(LiveSearchUpdateData[] payload);
         public delegate void LiveSearchDetectionHandler(StreamDetectionsData payload);
         public delegate void SubscribedHandler(SubscribedData payload);
+        public delegate void UnsubscribedHandler(SubscribedData payload);
         public delegate void ConnectedHandler();
         public delegate void DisconnectedHandler(string reason);
         public delegate void ReconnectedHandler(int attempts);
@@ -33,9 +35,12 @@ namespace EyesOnItSDK.SocketIO
         public event StreamUpdateHandler OnStreamUpdate;
         public event StreamDetectionHandler OnStreamDetection;
         public event PerformanceUpdateHandler OnPerformanceUpdate;
+        public event CountUpdateHandler OnCountUpdate;
+        public event VideoProcessingUpdateHandler OnVideoProcessingUpdate;
         public event LiveSearchUpdateHandler OnLiveSearchUpdate;
         public event LiveSearchDetectionHandler OnLiveSearchDetection;
         public event SubscribedHandler OnSubscribed;
+        public event UnsubscribedHandler OnUnsubscribed;
         public event ConnectedHandler OnConnected;
         public event DisconnectedHandler OnDisconnected;
         public event ReconnectedHandler OnReconnected;
@@ -55,7 +60,6 @@ namespace EyesOnItSDK.SocketIO
                 if (socket == null)
                 {
                     socket = new SocketIOClient.SocketIO(url, options);
-                    socket.Serializer = new NewtonsoftJsonSerializer();
                 }
 
                 if (!handlersRegistered)
@@ -100,7 +104,7 @@ namespace EyesOnItSDK.SocketIO
                 return;
             }
 
-            await currentSocket.EmitAsync("subscribe", room).ConfigureAwait(false);
+            await currentSocket.EmitAsync("subscribe", new { room }).ConfigureAwait(false);
         }
 
         public async Task JoinRoomsAsync(IEnumerable<string> rooms)
@@ -138,7 +142,7 @@ namespace EyesOnItSDK.SocketIO
                 return;
             }
 
-            await currentSocket.EmitAsync("unsubscribe", room).ConfigureAwait(false);
+            await currentSocket.EmitAsync("unsubscribe", new { room }).ConfigureAwait(false);
         }
 
         public async Task EmitAsync(string eventName, params object[] args)
@@ -263,7 +267,7 @@ namespace EyesOnItSDK.SocketIO
 
             foreach (var room in rooms)
             {
-                await currentSocket.EmitAsync("subscribe", room).ConfigureAwait(false);
+                await currentSocket.EmitAsync("subscribe", new { room }).ConfigureAwait(false);
             }
         }
 
@@ -329,7 +333,39 @@ namespace EyesOnItSDK.SocketIO
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "SocketIOClient: Failed to handle performance_update");
+                    Log.Error(ex, "SocketIOClient: Failed to handle live_search_update");
+                }
+            });
+
+            socket.On("count_update", response =>
+            {
+                try
+                {
+                    Log.Debug("SocketIOClient: count_update message received");
+
+                    CountUpdateDataWrapper payload = response.GetValue<CountUpdateDataWrapper>(0);
+
+                    OnCountUpdate?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle count_update");
+                }
+            });
+
+            socket.On("video_processing_update", response =>
+            {
+                try
+                {
+                    Log.Debug("SocketIOClient: video_processing_update message received");
+
+                    VideoProcessingUpdateData[] payload = response.GetValue<VideoProcessingUpdateData[]>(0);
+
+                    OnVideoProcessingUpdate?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle video_processing_update");
                 }
             });
 
@@ -362,6 +398,22 @@ namespace EyesOnItSDK.SocketIO
                 catch (Exception ex)
                 {
                     Log.Error(ex, "SocketIOClient: Failed to handle subscribed");
+                }
+            });
+
+            socket.On("unsubscribed", response =>
+            {
+                try
+                {
+                    Log.Debug("SocketIOClient: unsubscribed message received");
+
+                    SubscribedData payload = response.GetValue<SubscribedData>(0);
+
+                    OnUnsubscribed?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle unsubscribed");
                 }
             });
         }

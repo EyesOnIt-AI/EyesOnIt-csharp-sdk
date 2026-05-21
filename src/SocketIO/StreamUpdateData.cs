@@ -1,65 +1,76 @@
 ﻿// SocketClient.cs
-using Newtonsoft.Json;
 using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.SocketIO
 {
     public class StreamObjectDescriptionsData
     {
-        [JsonProperty("text")]
+        [JsonPropertyName("display_text")]
+        public string DisplayText { get; set; }
+
         [JsonPropertyName("text")]
         public string Text { get; set; }
 
-        [JsonProperty("confidence")]
+        [JsonPropertyName("threshold")]
+        public int? Threshold { get; set; }
+
+        [JsonPropertyName("alert")]
+        public bool? Alert { get; set; }
+
         [JsonPropertyName("confidence")]
         public float? Confidence { get; set; }
 
-        [JsonProperty("over_threshold")]
         [JsonPropertyName("over_threshold")]
         public bool? OverThreshold { get; set; }
+
+        [JsonPropertyName("background_prompt")]
+        public bool? BackgroundPrompt { get; set; }
     }
 
-    public class StreamUpdateDetectionConfigsData
+    public class StreamUpdateObjectData
     {
-        [JsonProperty("class_name")]
-        [JsonPropertyName("class_name")]
-        public string ClassName { get; set; }
+        [JsonPropertyName("class_confidence")]
+        public float? ClassConfidence { get; set; }
 
-        [JsonProperty("object_descriptions")]
         [JsonPropertyName("object_descriptions")]
         public StreamObjectDescriptionsData[] ObjectDescriptions { get; set; }
     }
 
+    public class StreamUpdateDetectionConfigsData
+    {
+        [JsonPropertyName("class_name")]
+        public string ClassName { get; set; }
+
+        [JsonPropertyName("object_descriptions")]
+        public StreamObjectDescriptionsData[] ObjectDescriptions { get; set; }
+
+        [JsonPropertyName("objects")]
+        public StreamUpdateObjectData[] Objects { get; set; }
+    }
+
     public class StreamUpdateRegionData
     {
-        [JsonProperty("name")]
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonProperty("detection_configs")]
         [JsonPropertyName("detection_configs")]
         public StreamUpdateDetectionConfigsData[] DetectionConfigurations { get; set; }
     }
 
     public class StreamUpdateData
     {
-        [JsonProperty("stream_url")]
         [JsonPropertyName("stream_url")] 
         public string StreamUrl { get; set; }
 
-        [JsonProperty("stream_id")]
         [JsonPropertyName("stream_id")]
         public string StreamId { get; set; }
 
-        [JsonProperty("name")]
         [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonProperty("status")]
         [JsonPropertyName("status")]
         public string Status { get; set; }
 
-        [JsonProperty("regions")]
         [JsonPropertyName("regions")]
         public StreamUpdateRegionData[] Regions { get; set; }
     }

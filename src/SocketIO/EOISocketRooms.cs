@@ -9,6 +9,8 @@ namespace EyesOnItSDK.SocketIO
         public const string AllStreamDetections = "all_stream_detections";
         public const string AllPerformanceUpdates = "all_performance_updates";
         public const string AllLiveSearchUpdates = "all_live_search_updates";
+        public const string AllCountUpdates = "all_count_updates";
+        public const string AllVideoProcessingUpdates = "all_video_processing_updates";
         // This is the room-name prefix; use LiveSearchDetectionsForSearch(searchId) to join a specific room.
         public const string LiveSearchDetections = "live_search_detections";
         public static IReadOnlyCollection<string> StaticRoomNames { get; } = Array.AsReadOnly(new[]
@@ -16,7 +18,9 @@ namespace EyesOnItSDK.SocketIO
             AllStreamUpdates,
             AllStreamDetections,
             AllPerformanceUpdates,
-            AllLiveSearchUpdates
+            AllLiveSearchUpdates,
+            AllCountUpdates,
+            AllVideoProcessingUpdates
         });
 
         public static string LiveSearchDetectionsForSearch(int searchId)
