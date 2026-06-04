@@ -20,6 +20,10 @@ namespace EyesOnItSDK.API.Elements
 
         public int Bottom => Top + Height;
 
+        public EOIBoundingBox()
+        {
+        }
+
         public EOIBoundingBox(int left, int top, int width, int height)
         {
             this.Left = left;

@@ -2,7 +2,7 @@
 
 namespace EyesOnItSDK.API.Elements
 {
-    public class EOIDetectionObject
+    public class EOIDetectionObject : EOIBase64Image
     {
         [JsonPropertyName("object_descriptions")]
         public EOIObjectDescription[] ObjectDescriptions { get; set; }
@@ -10,17 +10,17 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("detection_type")]
         public string DetectionType { get; set; }
 
+        [JsonPropertyName("detection_types")]
+        public string[] DetectionTypes { get; set; }
+
         [JsonPropertyName("class_confidence")]
-        public float ClassConfidence { get; set; }
+        public float? ClassConfidence { get; set; }
 
         [JsonPropertyName("class_name")]
         public string ClassName { get; set; }
 
         [JsonPropertyName("bounds")]
         public EOIBoundingBox Bounds { get; set; }
-
-        [JsonPropertyName("image")]
-        public string Image { get; set; }
 
         [JsonPropertyName("face")]
         public EOIFaceDetectionObject Face { get; set; }
@@ -34,6 +34,11 @@ namespace EyesOnItSDK.API.Elements
         }
         public double? GetConfidenceForDescription(string description)
         {
+            if (ObjectDescriptions == null)
+            {
+                return null;
+            }
+
             foreach (var objectDescription in ObjectDescriptions)
             {
                 if (objectDescription.Text == description)
@@ -49,12 +54,15 @@ namespace EyesOnItSDK.API.Elements
             double maxConfidence = -1;
             string maxConfidenceDescription = null;
 
-            foreach (var objectDescription in ObjectDescriptions)
+            if (ObjectDescriptions != null)
             {
-                if (objectDescription.Confidence != null && objectDescription.Confidence > maxConfidence)
+                foreach (var objectDescription in ObjectDescriptions)
                 {
-                    maxConfidence = objectDescription.Confidence.Value;
-                    maxConfidenceDescription = objectDescription.Text;
+                    if (objectDescription.Confidence != null && objectDescription.Confidence > maxConfidence)
+                    {
+                        maxConfidence = objectDescription.Confidence.Value;
+                        maxConfidenceDescription = objectDescription.Text;
+                    }
                 }
             }
 

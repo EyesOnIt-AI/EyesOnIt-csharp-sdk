@@ -23,7 +23,7 @@ namespace EyesOnItSDK.API.Elements
         public bool? OverThreshold { get; set; }
 
         [JsonPropertyName("background_prompt")]
-        public bool BackgroundPrompt { get; set; }
+        public bool? BackgroundPrompt { get; set; }
 
         public EOIObjectDescription()
         {

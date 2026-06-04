@@ -68,7 +68,7 @@ namespace EyesOnItSDK.API.Elements
                     switch (obj.DetectionType)
                     {
                         case "class_name":
-                            confidence = obj.ClassConfidence;
+                            confidence = obj.ClassConfidence ?? 0;
                             description = obj.ClassName ?? "";
                             break;
                         case "natural_language":

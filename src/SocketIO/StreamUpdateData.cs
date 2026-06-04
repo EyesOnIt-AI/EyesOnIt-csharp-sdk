@@ -1,39 +1,16 @@
 ﻿// SocketClient.cs
+using EyesOnItSDK.API.Elements;
 using System.Text.Json.Serialization;
 
 namespace EyesOnItSDK.SocketIO
 {
-    public class StreamObjectDescriptionsData
-    {
-        [JsonPropertyName("display_text")]
-        public string DisplayText { get; set; }
-
-        [JsonPropertyName("text")]
-        public string Text { get; set; }
-
-        [JsonPropertyName("threshold")]
-        public int? Threshold { get; set; }
-
-        [JsonPropertyName("alert")]
-        public bool? Alert { get; set; }
-
-        [JsonPropertyName("confidence")]
-        public float? Confidence { get; set; }
-
-        [JsonPropertyName("over_threshold")]
-        public bool? OverThreshold { get; set; }
-
-        [JsonPropertyName("background_prompt")]
-        public bool? BackgroundPrompt { get; set; }
-    }
-
     public class StreamUpdateObjectData
     {
         [JsonPropertyName("class_confidence")]
         public float? ClassConfidence { get; set; }
 
         [JsonPropertyName("object_descriptions")]
-        public StreamObjectDescriptionsData[] ObjectDescriptions { get; set; }
+        public EOIObjectDescription[] ObjectDescriptions { get; set; }
     }
 
     public class StreamUpdateDetectionConfigsData
@@ -42,7 +19,7 @@ namespace EyesOnItSDK.SocketIO
         public string ClassName { get; set; }
 
         [JsonPropertyName("object_descriptions")]
-        public StreamObjectDescriptionsData[] ObjectDescriptions { get; set; }
+        public EOIObjectDescription[] ObjectDescriptions { get; set; }
 
         [JsonPropertyName("objects")]
         public StreamUpdateObjectData[] Objects { get; set; }

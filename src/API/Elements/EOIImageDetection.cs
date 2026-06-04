@@ -14,30 +14,9 @@ namespace EyesOnItSDK.API.Elements
             
         }
 
-        public EOIDetectionObject[] GetDetectedObjects() 
+        public override EOIDetectionObject[] GetDetectedObjects() 
         { 
             return Objects;
-        }
-
-        public (EOIDetectionObject detectionObject, EOIObjectDescription objectDescription) GetObjectByDescription(string objectDescription)
-        {
-            EOIDetectionObject[] detectedObjects = GetDetectedObjects();
-
-            if (detectedObjects != null)
-            {
-                foreach (var detectedObject in detectedObjects)
-                {
-                    foreach (var detectedObjectDescription in detectedObject.ObjectDescriptions)
-                    {
-                        if (detectedObjectDescription.Text == objectDescription)
-                        {
-                            return (detectedObject, detectedObjectDescription);
-                        }
-                    }
-                }
-            }
-
-            return (null, null);
         }
     }
 }
