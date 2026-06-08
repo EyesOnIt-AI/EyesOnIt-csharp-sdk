@@ -1,0 +1,30 @@
+name: Cross-repo change
+description: Plan C# SDK work that affects other repos.
+title: "[Cross Repo]: "
+labels: ["cross-repo", "csharp-sdk"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Business goal
+    validations:
+      required: true
+  - type: textarea
+    id: repos
+    attributes:
+      label: Affected repos
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: API, SDK, security, and documentation impact
+    validations:
+      required: true
+  - type: textarea
+    id: plan
+    attributes:
+      label: Merge order, tests, and rollback
+    validations:
+      required: true
+

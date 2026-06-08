@@ -1,0 +1,24 @@
+name: Feature request
+description: Request a C# SDK feature.
+title: "[C# SDK Feature]: "
+labels: ["feature", "csharp-sdk"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal and users
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and constraints
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+    validations:
+      required: true
+

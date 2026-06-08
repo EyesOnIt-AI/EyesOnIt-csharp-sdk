@@ -1,0 +1,24 @@
+name: Contract change
+description: Propose a C# SDK contract change.
+title: "[C# SDK Contract]: "
+labels: ["contract", "csharp-sdk"]
+body:
+  - type: textarea
+    id: contract
+    attributes:
+      label: SDK contract
+    validations:
+      required: true
+  - type: textarea
+    id: consumers
+    attributes:
+      label: Backend and consumers affected
+    validations:
+      required: true
+  - type: textarea
+    id: rollout
+    attributes:
+      label: Rollout, tests, and rollback
+    validations:
+      required: true
+
