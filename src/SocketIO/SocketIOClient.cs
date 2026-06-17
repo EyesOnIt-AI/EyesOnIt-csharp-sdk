@@ -14,19 +14,23 @@ namespace EyesOnItSDK.SocketIO
         private readonly SocketIOOptions options;
         private readonly object syncRoot = new object();
         private readonly object joinedRoomsSyncRoot = new object();
+        private readonly object sequenceSyncRoot = new object();
         private readonly HashSet<string> joinedRooms = new HashSet<string>(StringComparer.Ordinal);
+        private readonly Dictionary<string, long> lastSequenceByRoom = new Dictionary<string, long>(StringComparer.Ordinal);
+        private readonly Dictionary<string, string> serverInstanceIdByRoom = new Dictionary<string, string>(StringComparer.Ordinal);
         private SocketIOClient.SocketIO socket;
         private bool handlersRegistered;
 
-        public delegate void StreamUpdateHandler(StreamUpdateData[] payload);
+        public delegate void StreamUpdateHandler(StreamUpdateEnvelopeData payload);
         public delegate void StreamDetectionHandler(StreamDetectionsData payload);
-        public delegate void PerformanceUpdateHandler(PerformanceUpdateDataWrapper payload);
+        public delegate void PerformanceUpdateHandler(PerformanceUpdateData payload);
         public delegate void CountUpdateHandler(CountUpdateDataWrapper payload);
         public delegate void VideoProcessingUpdateHandler(VideoProcessingUpdateData[] payload);
-        public delegate void LiveSearchUpdateHandler(LiveSearchUpdateData[] payload);
+        public delegate void LiveSearchUpdateHandler(LiveSearchUpdateEnvelopeData payload);
         public delegate void LiveSearchDetectionHandler(StreamDetectionsData payload);
         public delegate void SubscribedHandler(SubscribedData payload);
         public delegate void UnsubscribedHandler(SubscribedData payload);
+        public delegate void SubscriptionErrorHandler(SubscriptionErrorData payload);
         public delegate void ConnectedHandler();
         public delegate void DisconnectedHandler(string reason);
         public delegate void ReconnectedHandler(int attempts);
@@ -41,6 +45,7 @@ namespace EyesOnItSDK.SocketIO
         public event LiveSearchDetectionHandler OnLiveSearchDetection;
         public event SubscribedHandler OnSubscribed;
         public event UnsubscribedHandler OnUnsubscribed;
+        public event SubscriptionErrorHandler OnSubscriptionError;
         public event ConnectedHandler OnConnected;
         public event DisconnectedHandler OnDisconnected;
         public event ReconnectedHandler OnReconnected;
@@ -143,6 +148,22 @@ namespace EyesOnItSDK.SocketIO
             }
 
             await currentSocket.EmitAsync("unsubscribe", new { room }).ConfigureAwait(false);
+        }
+
+        public async Task RequestSnapshotAsync(string room)
+        {
+            if (string.IsNullOrWhiteSpace(room))
+            {
+                return;
+            }
+
+            var currentSocket = socket;
+            if (currentSocket == null || !currentSocket.Connected)
+            {
+                return;
+            }
+
+            await currentSocket.EmitAsync("request_snapshot", new { room }).ConfigureAwait(false);
         }
 
         public async Task EmitAsync(string eventName, params object[] args)
@@ -271,6 +292,64 @@ namespace EyesOnItSDK.SocketIO
             }
         }
 
+        private bool ShouldProcessSequencedMessage(string room, string serverInstanceId, long sequence, string messageType)
+        {
+            if (string.IsNullOrWhiteSpace(room) || string.IsNullOrWhiteSpace(serverInstanceId) || sequence <= 0)
+            {
+                return true;
+            }
+
+            bool requestSnapshot = false;
+            lock (sequenceSyncRoot)
+            {
+                string previousServerInstanceId;
+                if (!serverInstanceIdByRoom.TryGetValue(room, out previousServerInstanceId) || previousServerInstanceId != serverInstanceId)
+                {
+                    serverInstanceIdByRoom[room] = serverInstanceId;
+                    lastSequenceByRoom[room] = sequence;
+                    return true;
+                }
+
+                long previousSequence;
+                if (lastSequenceByRoom.TryGetValue(room, out previousSequence))
+                {
+                    if (sequence <= previousSequence)
+                    {
+                        return false;
+                    }
+
+                    requestSnapshot = sequence > previousSequence + 1
+                        && !string.Equals(messageType, "snapshot", StringComparison.OrdinalIgnoreCase);
+                }
+
+                lastSequenceByRoom[room] = sequence;
+            }
+
+            if (requestSnapshot)
+            {
+                RequestSnapshotFireAndForget(room);
+            }
+
+            return true;
+        }
+
+        private void RequestSnapshotFireAndForget(string room)
+        {
+            var currentSocket = socket;
+            if (currentSocket == null || !currentSocket.Connected)
+            {
+                return;
+            }
+
+            _ = currentSocket.EmitAsync("request_snapshot", new { room }).ContinueWith(task =>
+            {
+                if (task.IsFaulted)
+                {
+                    Log.Error(task.Exception, "SocketIOClient: failed to request snapshot for room {Room}", room);
+                }
+            }, TaskScheduler.Default);
+        }
+
         private void RegisterEventHandlers()
         {
             socket.On("stream_update", response =>
@@ -279,7 +358,11 @@ namespace EyesOnItSDK.SocketIO
                 {
                     Log.Debug("SocketIOClient: stream_update message received");
 
-                    StreamUpdateData[] payload = response.GetValue<StreamUpdateData[]>(0);
+                    StreamUpdateEnvelopeData payload = response.GetValue<StreamUpdateEnvelopeData>(0);
+                    if (!ShouldProcessSequencedMessage(payload?.Room, payload?.ServerInstanceId, payload?.Sequence ?? 0, payload?.MessageType))
+                    {
+                        return;
+                    }
 
                     OnStreamUpdate?.Invoke(payload);
                 }
@@ -311,7 +394,11 @@ namespace EyesOnItSDK.SocketIO
                 {
                     Log.Debug("SocketIOClient: performance_update message received");
 
-                    PerformanceUpdateDataWrapper payload = response.GetValue<PerformanceUpdateDataWrapper>(0);
+                    PerformanceUpdateData payload = response.GetValue<PerformanceUpdateData>(0);
+                    if (!ShouldProcessSequencedMessage(EOISocketRooms.AllPerformanceUpdates, payload?.ServerInstanceId, payload?.Sequence ?? 0, null))
+                    {
+                        return;
+                    }
 
                     OnPerformanceUpdate?.Invoke(payload);
                 }
@@ -327,7 +414,11 @@ namespace EyesOnItSDK.SocketIO
                 {
                     Log.Debug("SocketIOClient: live_search_update message received");
 
-                    LiveSearchUpdateData[] payload = response.GetValue<LiveSearchUpdateData[]>(0);
+                    LiveSearchUpdateEnvelopeData payload = response.GetValue<LiveSearchUpdateEnvelopeData>(0);
+                    if (!ShouldProcessSequencedMessage(payload?.Room, payload?.ServerInstanceId, payload?.Sequence ?? 0, payload?.MessageType))
+                    {
+                        return;
+                    }
 
                     OnLiveSearchUpdate?.Invoke(payload);
                 }
@@ -414,6 +505,22 @@ namespace EyesOnItSDK.SocketIO
                 catch (Exception ex)
                 {
                     Log.Error(ex, "SocketIOClient: Failed to handle unsubscribed");
+                }
+            });
+
+            socket.On("subscription_error", response =>
+            {
+                try
+                {
+                    Log.Debug("SocketIOClient: subscription_error message received");
+
+                    SubscriptionErrorData payload = response.GetValue<SubscriptionErrorData>(0);
+
+                    OnSubscriptionError?.Invoke(payload);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle subscription_error");
                 }
             });
         }

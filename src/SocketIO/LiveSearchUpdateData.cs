@@ -10,9 +10,6 @@ namespace EyesOnItSDK.SocketIO
         [JsonPropertyName("seed_id")]
         public long? SeedId { get; set; }
 
-        [JsonPropertyName("image")]
-        public string Image { get; set; }
-
         [JsonPropertyName("alert")]
         public bool? Alert { get; set; }
 
@@ -71,5 +68,26 @@ namespace EyesOnItSDK.SocketIO
 
         [JsonPropertyName("notification")]
         public SocketNotificationData Notification { get; set; }
+    }
+
+    public class LiveSearchUpdateChangeData
+    {
+        [JsonPropertyName("op")]
+        public string Op { get; set; }
+
+        [JsonPropertyName("live_search")]
+        public LiveSearchUpdateData LiveSearch { get; set; }
+
+        [JsonPropertyName("search_id")]
+        public int SearchId { get; set; }
+    }
+
+    public class LiveSearchUpdateEnvelopeData : SocketEnvelopeData
+    {
+        [JsonPropertyName("live_searches")]
+        public LiveSearchUpdateData[] LiveSearches { get; set; }
+
+        [JsonPropertyName("changes")]
+        public LiveSearchUpdateChangeData[] Changes { get; set; }
     }
 }

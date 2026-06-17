@@ -20,7 +20,8 @@ namespace EyesOnItSDK.SocketIO
             AllPerformanceUpdates,
             AllLiveSearchUpdates,
             AllCountUpdates,
-            AllVideoProcessingUpdates
+            AllVideoProcessingUpdates,
+            LiveSearchDetections
         });
 
         public static string LiveSearchDetectionsForSearch(int searchId)

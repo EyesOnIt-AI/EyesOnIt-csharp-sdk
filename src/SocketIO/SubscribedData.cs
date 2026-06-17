@@ -8,4 +8,10 @@ namespace EyesOnItSDK.SocketIO
         [JsonPropertyName("room")] 
         public string Room { get; set; }
     }
+
+    public class SubscriptionErrorData : SubscribedData
+    {
+        [JsonPropertyName("message")]
+        public string Message { get; set; }
+    }
 }
