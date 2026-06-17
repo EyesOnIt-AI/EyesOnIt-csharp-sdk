@@ -1,0 +1,63 @@
+name: AI Validation
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+      - version_5
+      - v4.1
+      - V4.1
+  workflow_dispatch:
+
+jobs:
+  docs:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Validate AI docs
+        shell: bash
+        run: |
+          set -euo pipefail
+          required=(
+            ai/repo-context.md
+            ai/agent-rules.md
+            ai/build-and-test.md
+            ai/release-process.md
+            ai/contracts.md
+            ai/risk-areas.md
+            ai/common-tasks.md
+            .github/PULL_REQUEST_TEMPLATE.md
+            .github/ISSUE_TEMPLATE/bug-report.yml
+            .github/ISSUE_TEMPLATE/feature-request.yml
+            .github/ISSUE_TEMPLATE/cross-repo-change.yml
+            .github/ISSUE_TEMPLATE/contract-change.yml
+            .github/ISSUE_TEMPLATE/ai-task.yml
+          )
+          for file in "${required[@]}"; do
+            test -f "$file" || { echo "Missing $file"; exit 1; }
+          done
+          scan_paths=(.github/PULL_REQUEST_TEMPLATE.md .github/ISSUE_TEMPLATE ai)
+          if find "${scan_paths[@]}" -type f -print0 | xargs -0 grep -nE '[[:blank:]]$'; then
+            echo "Trailing whitespace found in AI docs/templates"
+            exit 1
+          fi
+          blocked='(/home/matt|/mnt/c|C:\\|\\\\wsl|/Users/mbrinton|eoi-messaging-server)'
+          if grep -R -n -E "$blocked" "${scan_paths[@]}"; then
+            echo "Personal absolute path or old repo name found in AI docs/templates"
+            exit 1
+          fi
+
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - name: Restore and build
+        shell: pwsh
+        run: |
+          msbuild eyesonit-csharp-sdk.sln /restore /p:Configuration=Release

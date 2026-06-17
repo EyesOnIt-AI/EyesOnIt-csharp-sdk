@@ -263,6 +263,50 @@ namespace EyesOnItSDK.API
             return response;
         }
 
+        public static EOIResponse ValidateStopVideoInputs(EOIStopVideoInputs inputs)
+        {
+            if (inputs == null)
+            {
+                return new EOIResponse(false, "inputs = null. Stop video request must include inputs");
+            }
+
+            return inputs.VideoId == null || inputs.VideoId.Trim().Length > 0
+                ? EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, "video_id must not be empty when provided");
+        }
+
+        public static EOIResponse ValidateGetVideoStatusInputs(EOIGetVideoStatusInputs inputs)
+        {
+            if (inputs == null)
+            {
+                return new EOIResponse(false, "inputs = null. Get video status request must include inputs");
+            }
+
+            return string.IsNullOrWhiteSpace(inputs.VideoId)
+                ? new EOIResponse(false, "video_id must be provided")
+                : EOIResponse.DefaultSuccess();
+        }
+
+        public static EOIResponse ValidateLicenseInputs(EOIValidateLicenseInputs inputs)
+        {
+            if (inputs == null)
+            {
+                return new EOIResponse(false, "inputs = null. Validate license request must include inputs");
+            }
+
+            if (string.IsNullOrWhiteSpace(inputs.Key))
+            {
+                return new EOIResponse(false, "key must be provided");
+            }
+
+            if (string.IsNullOrWhiteSpace(inputs.Token))
+            {
+                return new EOIResponse(false, "token must be provided");
+            }
+
+            return EOIResponse.DefaultSuccess();
+        }
+
         private static EOIResponse ValidateBaseInputs(
             EOIBaseInputs inputs,
             EOILine[] lines,

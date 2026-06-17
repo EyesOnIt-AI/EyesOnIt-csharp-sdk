@@ -31,6 +31,8 @@ namespace EyesOnItSDK.API
         private readonly string monitorStreamPath = "/monitor_stream";
         private readonly string processImagePath = "/process_image";
         private readonly string processVideoPath = "/process_video";
+        private readonly string stopVideoPath = "/stop_video";
+        private readonly string getVideoStatusPath = "/get_video_status";
         private readonly string removeStreamPath = "/remove_stream";
         private readonly string stopMonitorStreamPath = "/stop_monitoring";
         private readonly string searchLivePath = "/live_search";
@@ -38,6 +40,8 @@ namespace EyesOnItSDK.API
         private readonly string pauseLiveSearchPath = "/pause_live_search";
         private readonly string resumeLiveSearchPath = "/resume_live_search";
         private readonly string cancelLiveSearchPath = "/cancel_live_search";
+        private readonly string getConfigPath = "/get_config";
+        private readonly string updateConfigPath = "/update_config";
         private readonly string facerecGroupsPath = "/facerec_groups";
         private readonly string facerecSearchGroupNamesPath = "/facerec_search_group_names";
         private readonly string facerecSearchPeopleNamesPath = "/facerec_search_people_names";
@@ -48,6 +52,10 @@ namespace EyesOnItSDK.API
         private readonly string facerecRemovePersonPath = "/facerec_remove_person";
         private readonly string facerecPersonDetailsPath = "/facerec_person_details";
         private readonly string healthPath = "/health";
+        private readonly string isEoiAlivePath = "/is_eoi_alive";
+        private readonly string isLicenseValidPath = "/is_license_valid";
+        private readonly string getLicenseStatusPath = "/get_license_status";
+        private readonly string validateLicensePath = "/validate_license";
 
         public EyesOnItAPI(string baseUrl)
         {
@@ -92,6 +100,109 @@ namespace EyesOnItSDK.API
             }
 
             return healthResponse;
+        }
+
+        public async Task<EOIBaseOutputs> IsEoiAlive()
+        {
+            EOIBaseOutputs isEoiAliveResponse;
+
+            string endPoint = $"{baseUrl}{isEoiAlivePath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint);
+                isEoiAliveResponse = new EOIBaseOutputs(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"IsEoiAlive: Exception: {exc.Message}");
+                isEoiAliveResponse = new EOIBaseOutputs(false, exc.Message);
+            }
+
+            return isEoiAliveResponse;
+        }
+
+        public async Task<EOILicenseValidityResponse> IsLicenseValid()
+        {
+            EOILicenseValidityResponse isLicenseValidResponse;
+
+            string endPoint = $"{baseUrl}{isLicenseValidPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint, logResponse: false);
+                isLicenseValidResponse = new EOILicenseValidityResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"IsLicenseValid: Exception: {exc.Message}");
+                isLicenseValidResponse = new EOILicenseValidityResponse(false, exc.Message);
+            }
+
+            return isLicenseValidResponse;
+        }
+
+        public async Task<EOILicenseStatusResponse> GetLicenseStatus()
+        {
+            EOILicenseStatusResponse getLicenseStatusResponse;
+
+            string endPoint = $"{baseUrl}{getLicenseStatusPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint, logResponse: false);
+                getLicenseStatusResponse = new EOILicenseStatusResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"GetLicenseStatus: Exception: {exc.Message}");
+                getLicenseStatusResponse = new EOILicenseStatusResponse(false, exc.Message);
+            }
+
+            return getLicenseStatusResponse;
+        }
+
+        public async Task<EOILicenseStatusResponse> ValidateLicense(string key, string token)
+        {
+            return await ValidateLicense(new EOIValidateLicenseInputs(key, token));
+        }
+
+        public async Task<EOILicenseStatusResponse> ValidateLicense(EOIValidateLicenseInputs inputs)
+        {
+            EOILicenseStatusResponse validateLicenseResponse = new EOILicenseStatusResponse(EOIValidator.ValidateLicenseInputs(inputs));
+
+            if (validateLicenseResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{validateLicensePath}";
+
+                Log.Debug($"Calling {endPoint}");
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData, logPayload: false, logResponse: false);
+                    validateLicenseResponse = new EOILicenseStatusResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"ValidateLicense: Exception: {exc.Message}");
+                    validateLicenseResponse = new EOILicenseStatusResponse(false, exc.Message);
+                }
+            }
+
+            return validateLicenseResponse;
         }
 
         public async Task<EOIProcessImageResponse> ProcessImage(EOIProcessImageInputs inputs)
@@ -307,6 +418,80 @@ namespace EyesOnItSDK.API
             }
 
             return processVideosResponse;
+        }
+
+        public async Task<EOIStopVideoResponse> StopVideo(string videoId = null)
+        {
+            return await StopVideo(new EOIStopVideoInputs(videoId));
+        }
+
+        public async Task<EOIStopVideoResponse> StopVideo(EOIStopVideoInputs inputs)
+        {
+            EOIStopVideoResponse stopVideoResponse = new EOIStopVideoResponse(EOIValidator.ValidateStopVideoInputs(inputs));
+
+            if (stopVideoResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{stopVideoPath}";
+
+                Log.Debug($"Calling {endPoint}");
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    stopVideoResponse = new EOIStopVideoResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"StopVideo: Exception: {exc.Message}");
+                    stopVideoResponse = new EOIStopVideoResponse(false, exc.Message);
+                }
+            }
+
+            return stopVideoResponse;
+        }
+
+        public async Task<EOIGetVideoStatusResponse> GetVideoStatus(string videoId)
+        {
+            return await GetVideoStatus(new EOIGetVideoStatusInputs(videoId));
+        }
+
+        public async Task<EOIGetVideoStatusResponse> GetVideoStatus(EOIGetVideoStatusInputs inputs)
+        {
+            EOIGetVideoStatusResponse getVideoStatusResponse = new EOIGetVideoStatusResponse(EOIValidator.ValidateGetVideoStatusInputs(inputs));
+
+            if (getVideoStatusResponse.Success)
+            {
+                string endPoint = $"{baseUrl}{getVideoStatusPath}";
+
+                Log.Debug($"Calling {endPoint}");
+
+                try
+                {
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
+
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    getVideoStatusResponse = new EOIGetVideoStatusResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"GetVideoStatus: Exception: {exc.Message}");
+                    getVideoStatusResponse = new EOIGetVideoStatusResponse(false, exc.Message);
+                }
+            }
+
+            return getVideoStatusResponse;
         }
 
         public async Task<EOIMonitorStreamResponse> MonitorStream(string streamUrl, int? durationSeconds)
@@ -615,11 +800,33 @@ namespace EyesOnItSDK.API
             return cancelLiveSearchResponse;
         }
 
+        public async Task<EOIGetConfigResponse> GetConfig()
+        {
+            EOIGetConfigResponse getConfigResponse;
+
+            string endPoint = $"{baseUrl}{getConfigPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint, logResponse: false);
+                getConfigResponse = new EOIGetConfigResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"GetConfig: Exception: {exc.Message}");
+                getConfigResponse = new EOIGetConfigResponse(false, exc.Message);
+            }
+
+            return getConfigResponse;
+        }
+
         public async Task<EOIUpdateConfigResponse> UpdateConfig(EOIUpdateConfigInputs inputs)
         {
             EOIUpdateConfigResponse updateConfigResponse = new EOIUpdateConfigResponse(EOIResponse.CreateSuccess());
 
-            string endPoint = $"{baseUrl}{"/update_config"}";
+            string endPoint = $"{baseUrl}{updateConfigPath}";
 
             try
             {
@@ -874,7 +1081,7 @@ namespace EyesOnItSDK.API
             return eoiFacerecPersonDetailsResponse;
         }
 
-        private async Task<EOIMessage> GetAsync(string endPoint)
+        private async Task<EOIMessage> GetAsync(string endPoint, bool logResponse = true)
         {
             EOIMessage eoiMessage;
             string responseContent = null;
@@ -886,7 +1093,7 @@ namespace EyesOnItSDK.API
 
                 httpResponse.EnsureSuccessStatusCode();
 
-                Log.Debug($"{endPoint} response: {responseContent}");
+                Log.Debug(logResponse ? $"{endPoint} response: {responseContent}" : $"{endPoint} response: [redacted]");
 
                 eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
             }
@@ -906,7 +1113,7 @@ namespace EyesOnItSDK.API
             return eoiMessage;
         }
 
-        private async Task<EOIMessage> PostAsync(string endpoint, string jsonString)
+        private async Task<EOIMessage> PostAsync(string endpoint, string jsonString, bool logPayload = true, bool logResponse = true)
         {
             const int maxAttempts = 2;
             var requestStopwatch = Stopwatch.StartNew();
@@ -924,7 +1131,7 @@ namespace EyesOnItSDK.API
                         attempt,
                         servicePoint?.ConnectionLimit ?? -1,
                         servicePoint?.CurrentConnections ?? -1);
-                    Log.Debug($"PostAsync: posting to {endpoint}. JSON = {jsonString}");
+                    Log.Debug(logPayload ? $"PostAsync: posting to {endpoint}. JSON = {jsonString}" : $"PostAsync: posting to {endpoint}. JSON = [redacted]");
 
                     using (var request = new HttpRequestMessage(HttpMethod.Post, requestUri))
                     {
@@ -943,8 +1150,15 @@ namespace EyesOnItSDK.API
 
                             string responseContent = await httpResponse.Content.ReadAsStringAsync().ConfigureAwait(false);
 
-                            string responseNoImage = this.RemoveImageProperties(responseContent);
-                            Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseNoImage}");
+                            if (logResponse)
+                            {
+                                string responseNoImage = this.RemoveImageProperties(responseContent);
+                                Log.Debug($"PostAsync: post to {endpoint}: response JSON = {responseNoImage}");
+                            }
+                            else
+                            {
+                                Log.Debug($"PostAsync: post to {endpoint}: response JSON = [redacted]");
+                            }
 
                             eoiMessage = JsonSerializer.Deserialize<EOIMessage>(responseContent);
 
