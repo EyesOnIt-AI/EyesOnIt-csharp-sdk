@@ -7,9 +7,6 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("object_descriptions")]
         public EOIObjectDescription[] ObjectDescriptions { get; set; }
 
-        [JsonPropertyName("detection_type")]
-        public string DetectionType { get; set; }
-
         [JsonPropertyName("detection_types")]
         public string[] DetectionTypes { get; set; }
 

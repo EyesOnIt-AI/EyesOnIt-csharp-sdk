@@ -11,6 +11,18 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("class_threshold")]
         public int? ClassThreshold { get; set; }
 
+        [JsonPropertyName("use_object_type_detection")]
+        public bool UseObjectTypeDetection { get; set; } = true;
+
+        [JsonPropertyName("use_natural_language")]
+        public bool UseNaturalLanguage { get; set; } = false;
+
+        [JsonPropertyName("use_face_recognition")]
+        public bool UseFaceRecognition { get; set; } = false;
+
+        [JsonPropertyName("use_similarity_detection")]
+        public bool UseSimilarityDetection { get; set; } = false;
+
         [JsonPropertyName("object_size")]
         public int? ObjectSize { get; set; }
 

@@ -65,7 +65,11 @@ namespace EyesOnItSDK.API.Elements
                     double confidence = 0;
                     string description = null;
 
-                    switch (obj.DetectionType)
+                    var detectionType = obj.DetectionTypes != null && obj.DetectionTypes.Length > 0
+                        ? obj.DetectionTypes[0]
+                        : null;
+
+                    switch (detectionType)
                     {
                         case "class_name":
                             confidence = obj.ClassConfidence ?? 0;
