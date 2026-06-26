@@ -152,6 +152,20 @@ namespace EyesOnItSDK.API
                     response = new EOIResponse(false, $"If specified, EndSeconds must be greater than StartSeconds. StartSeconds = {inputs.StartSeconds}. EndSeconds = {inputs.EndSeconds}");
                 }
 
+                if (response.Success && inputs.VideoStartLocalTime != null)
+                {
+                    string videoStartLocalTime = inputs.VideoStartLocalTime.Trim();
+
+                    if (videoStartLocalTime.Length == 0)
+                    {
+                        response = new EOIResponse(false, $"If specified, VideoStartLocalTime must be a valid time. VideoStartLocalTime = {videoStartLocalTime}");
+                    }
+                    else if (!DateTime.TryParse(videoStartLocalTime, out _))
+                    {
+                        response = new EOIResponse(false, $"If specified, VideoStartLocalTime must be a valid time. VideoStartLocalTime = {videoStartLocalTime}");
+                    }
+                }
+
                 if (response.Success)
                 {
                     response = ValidateFrameRate(inputs.FrameRate);
