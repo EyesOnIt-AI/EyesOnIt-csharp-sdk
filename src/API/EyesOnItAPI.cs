@@ -337,7 +337,8 @@ namespace EyesOnItSDK.API
             EOIRecording recording = null,
             EOIEffects effects = null,
             bool indexForSearch = false,
-            string[] searchIndexTypes = null)
+            string[] searchIndexTypes = null,
+            EOICameraCalibration calibration = null)
         {
             searchIndexTypes = searchIndexTypes ?? new string[0];
 
@@ -352,7 +353,8 @@ namespace EyesOnItSDK.API
                 Recording = recording,
                 Effects = effects,
                 IndexForSearch = indexForSearch,
-                SearchIndexTypes = searchIndexTypes
+                SearchIndexTypes = searchIndexTypes,
+                Calibration = calibration
             };
 
             return await AddStream(inputs);

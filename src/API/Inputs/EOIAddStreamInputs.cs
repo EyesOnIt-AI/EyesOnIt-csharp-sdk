@@ -12,6 +12,9 @@ namespace EyesOnItSDK.API.Inputs
         [JsonPropertyName("notification")]
         public EOINotification Notification { get; set; }
 
+        [JsonPropertyName("calibration")]
+        public EOICameraCalibration Calibration { get; set; }
+
 
         public EOIAddStreamInputs() : base()
         {
@@ -30,7 +33,8 @@ namespace EyesOnItSDK.API.Inputs
             EOIRecording recording, 
             EOIEffects effects,
             bool indexForSearch,
-            string[] searchIndexTypes) : base()
+            string[] searchIndexTypes,
+            EOICameraCalibration calibration = null) : base()
         {
             this.StreamUrl = streamUrl;
             this.Name = name;
@@ -44,6 +48,7 @@ namespace EyesOnItSDK.API.Inputs
             this.Effects = effects;
             this.IndexForSearch = indexForSearch;
             this.SearchIndexTypes = searchIndexTypes;
+            this.Calibration = calibration;
         }
 
         public string ToJson()

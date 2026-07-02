@@ -39,6 +39,9 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("lines")]
         public EOILine[] Lines { get; set; }
 
+        [JsonPropertyName("calibration")]
+        public EOICameraCalibration Calibration { get; set; }
+
         [JsonPropertyName("notification")]
         public EOINotification Notification { get; set; }
 
