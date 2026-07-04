@@ -6,6 +6,11 @@ namespace EyesOnItSDK.API.Inputs
 {
     public class EOIAddStreamInputs : EOIBaseVideoInputs
     {
+        public const string CurrentSchemaVersion = "2.0";
+
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; } = CurrentSchemaVersion;
+
         [JsonPropertyName("stream_url")]
         public string StreamUrl { get; set; }
 
@@ -18,6 +23,7 @@ namespace EyesOnItSDK.API.Inputs
 
         public EOIAddStreamInputs() : base()
         {
+            this.SchemaVersion = CurrentSchemaVersion;
             this.FrameRate = 5;
             this.IndexForSearch = false;
         }
@@ -37,6 +43,7 @@ namespace EyesOnItSDK.API.Inputs
             EOICameraCalibration calibration = null) : base()
         {
             this.StreamUrl = streamUrl;
+            this.SchemaVersion = CurrentSchemaVersion;
             this.Name = name;
             this.FrameWidth = frameWidth;
             this.FrameHeight = frameHeight;

@@ -344,6 +344,7 @@ namespace EyesOnItSDK.API
 
             EOIAddStreamInputs inputs = new EOIAddStreamInputs() 
             {   
+                SchemaVersion = EOIAddStreamInputs.CurrentSchemaVersion,
                 Name = name,
                 StreamUrl = streamUrl,
                 FrameRate = frameRate,

@@ -5,6 +5,12 @@ namespace EyesOnItSDK.API.Elements
 {
     public class EOIDetectionConfig
     {
+        [JsonPropertyName("config_id")]
+        public string ConfigId { get; set; }
+
+        [JsonPropertyName("label")]
+        public string Label { get; set; }
+
         [JsonPropertyName("class_name")]
         public string ClassName { get; set; }
 

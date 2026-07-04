@@ -6,6 +6,9 @@ namespace EyesOnItSDK.API.Elements
 {
     public class EOIStreamInfo
     {
+        [JsonPropertyName("schema_version")]
+        public string SchemaVersion { get; set; }
+
         [JsonPropertyName("stream_url")]
         public string StreamUrl { get; set; }
 

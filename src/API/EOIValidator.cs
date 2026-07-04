@@ -22,6 +22,8 @@ namespace EyesOnItSDK.API
         private static string[] VALID_FACE_REC_MATCH_TYPE_NAMES = { "person", "group", "all_faces" };
         private static string[] COUNT_CONDITION_TYPES = { "count_equals", "count_greater_than", "count_less_than" };
         private static string[] LINE_CROSS_CONDITION_TYPES = { "line_cross" };
+        private static string[] RULE_ACTION_TYPES = { "alert", "record_event", "record_metric", "record_frame", "record_video", "create_evidence" };
+        private static string[] INTERACTION_RULES_REQUIRING_SECONDARY_CONFIG = { "co_presence", "close_approach", "collision_course_candidate" };
         private static int MIN_LINE_NAME_LENGTH = 3;
         private static int MIN_OBJECT_SIZE = 100;
         private static float MIN_ALERT_SECONDS = 0.1F;
@@ -380,6 +382,11 @@ namespace EyesOnItSDK.API
                         response = ValidateDetectionConfigs(region.DetectionConfigs, lines, validateForVideo, validSearchIndexInputs);
                     }
 
+                    if (response.Success && validateForVideo)
+                    {
+                        response = ValidateRules(region.Rules, region.DetectionConfigs, lines);
+                    }
+
                 }
             }
 
@@ -445,6 +452,174 @@ namespace EyesOnItSDK.API
             return response;
         }
 
+        public static EOIResponse ValidateRules(EOIRule[] rules, EOIDetectionConfig[] detectionConfigs, EOILine[] lines)
+        {
+            EOIResponse response = EOIResponse.DefaultSuccess();
+
+            if (rules == null || rules.Length == 0)
+            {
+                return response;
+            }
+
+            HashSet<string> detectionConfigIds = GetDetectionConfigIds(detectionConfigs);
+            HashSet<string> lineNames = new HashSet<string>((lines ?? new EOILine[0]).Select(line => line.Name).Where(name => !string.IsNullOrWhiteSpace(name)));
+
+            foreach (var rule in rules)
+            {
+                if (!response.Success)
+                {
+                    break;
+                }
+
+                if (rule == null || rule.Condition == null)
+                {
+                    response = new EOIResponse(false, "Rule condition must be specified");
+                    break;
+                }
+
+                string conditionType = (rule.Condition.Type ?? "").Trim().ToLowerInvariant();
+                if (string.IsNullOrWhiteSpace(conditionType))
+                {
+                    response = new EOIResponse(false, "Rule condition type must be specified");
+                }
+                else
+                {
+                    response = ValidateRuleActions(rule, conditionType);
+                }
+
+                if (response.Success)
+                {
+                    response = ValidateRuleTiming(rule);
+                }
+
+                if (response.Success && conditionType == "count")
+                {
+                    string configId = GetRuleDetectionConfigId(rule.Condition);
+                    if (!detectionConfigIds.Contains(configId ?? ""))
+                    {
+                        response = new EOIResponse(false, $"Count rule references unknown detection config: {configId}");
+                    }
+                    else if (rule.Condition.Count == null && rule.Condition.Value == null)
+                    {
+                        response = new EOIResponse(false, "Count rule condition must include count or value");
+                    }
+                }
+                else if (response.Success && conditionType == "line_cross")
+                {
+                    string configId = GetRuleDetectionConfigId(rule.Condition);
+                    if (!detectionConfigIds.Contains(configId ?? ""))
+                    {
+                        response = new EOIResponse(false, $"Line-cross rule references unknown detection config: {configId}");
+                    }
+                    else if (string.IsNullOrWhiteSpace(rule.Condition.LineName))
+                    {
+                        response = new EOIResponse(false, "Line-cross rule condition must include line_name");
+                    }
+                    else if (rule.Condition.AlertDirection != "positive" && rule.Condition.AlertDirection != "negative")
+                    {
+                        response = new EOIResponse(false, "Line-cross rule condition alert_direction must be positive or negative");
+                    }
+                    else if (lineNames.Count > 0 && !lineNames.Contains(rule.Condition.LineName))
+                    {
+                        response = new EOIResponse(false, $"The line_name for line-cross rules must match a line name defined in the lines array. line_name = {rule.Condition.LineName}");
+                    }
+                }
+                else if (response.Success && conditionType.StartsWith("interaction."))
+                {
+                    string interactionType = conditionType.Substring("interaction.".Length);
+                    string primaryConfigId = rule.Condition.PrimaryConfigId ?? rule.Condition.SourceConfigId ?? rule.Condition.DetectionConfigId;
+                    if (!detectionConfigIds.Contains(primaryConfigId ?? ""))
+                    {
+                        response = new EOIResponse(false, $"Interaction rule references unknown primary detection config: {primaryConfigId}");
+                    }
+                    else if (INTERACTION_RULES_REQUIRING_SECONDARY_CONFIG.Contains(interactionType) && !detectionConfigIds.Contains(rule.Condition.SecondaryConfigId ?? ""))
+                    {
+                        response = new EOIResponse(false, $"Interaction rule references unknown secondary detection config: {rule.Condition.SecondaryConfigId}");
+                    }
+                }
+                else if (response.Success)
+                {
+                    response = new EOIResponse(false, $"Unsupported rule condition type: {conditionType}");
+                }
+            }
+
+            return response;
+        }
+
+        private static EOIResponse ValidateRuleActions(EOIRule rule, string conditionType)
+        {
+            if (rule.Actions == null || rule.Actions.Length == 0)
+            {
+                return new EOIResponse(false, "Rule actions must include at least one action");
+            }
+
+            bool hasAlertAction = false;
+            foreach (var action in rule.Actions)
+            {
+                string actionType = (action?.Type ?? "").Trim().ToLowerInvariant();
+                if (!RULE_ACTION_TYPES.Contains(actionType))
+                {
+                    return new EOIResponse(false, $"Unsupported rule action type: {actionType}");
+                }
+                if (actionType == "alert")
+                {
+                    hasAlertAction = true;
+                }
+            }
+
+            if ((conditionType == "count" || conditionType == "line_cross") && !hasAlertAction)
+            {
+                return new EOIResponse(false, "Count and line-cross rules currently require an alert action");
+            }
+
+            return EOIResponse.DefaultSuccess();
+        }
+
+        private static EOIResponse ValidateRuleTiming(EOIRule rule)
+        {
+            float? dwellSeconds = rule.DwellSeconds ?? rule.Condition?.DwellSeconds;
+            float? resetSeconds = rule.ResetSeconds ?? rule.Condition?.ResetSeconds;
+
+            if (dwellSeconds != null && dwellSeconds < MIN_ALERT_SECONDS)
+            {
+                return new EOIResponse(false, $"Rule dwell_seconds must be at least {MIN_ALERT_SECONDS}. dwell_seconds = {dwellSeconds}");
+            }
+            if (resetSeconds != null && resetSeconds < MIN_RESET_SECONDS)
+            {
+                return new EOIResponse(false, $"Rule reset_seconds must be at least {MIN_RESET_SECONDS}. reset_seconds = {resetSeconds}");
+            }
+
+            return EOIResponse.DefaultSuccess();
+        }
+
+        private static HashSet<string> GetDetectionConfigIds(EOIDetectionConfig[] detectionConfigs)
+        {
+            HashSet<string> ids = new HashSet<string>();
+            if (detectionConfigs == null)
+            {
+                return ids;
+            }
+
+            for (int index = 0; index < detectionConfigs.Length; index++)
+            {
+                string configId = detectionConfigs[index]?.ConfigId;
+                if (!string.IsNullOrWhiteSpace(configId))
+                {
+                    ids.Add(configId.Trim());
+                }
+                ids.Add($"dc_{index + 1}");
+                ids.Add(index.ToString());
+            }
+
+            return ids;
+        }
+
+        private static string GetRuleDetectionConfigId(EOIRuleCondition condition)
+        {
+            return condition?.SourceConfigId ?? condition?.DetectionConfigId ?? condition?.PrimaryConfigId;
+        }
+
+
         public static EOIResponse ValidateDetectionConfigs(
             EOIDetectionConfig[] detectionConfigs, 
             EOILine[] lines, 
@@ -500,15 +675,17 @@ namespace EyesOnItSDK.API
 
                         if (response.Success && validateForVideo)
                         {
-                            if (detectionConfig.AlertSeconds < EOIValidator.MIN_ALERT_SECONDS)
+                            bool hasLegacyConditions = detectionConfig.DetectionConditions != null && detectionConfig.DetectionConditions.Length > 0;
+
+                            if (hasLegacyConditions && detectionConfig.AlertSeconds < EOIValidator.MIN_ALERT_SECONDS)
                             {
                                 response = new EOIResponse(false, $"In detection configurations, alert seconds must be at least {EOIValidator.MIN_ALERT_SECONDS}. alert_seconds = {detectionConfig.AlertSeconds}");
                             }
-                            else if (detectionConfig.ResetSeconds < EOIValidator.MIN_RESET_SECONDS)
+                            else if (hasLegacyConditions && detectionConfig.ResetSeconds < EOIValidator.MIN_RESET_SECONDS)
                             {
                                 response = new EOIResponse(false, $"In detection configurations, reset seconds must be at least {EOIValidator.MIN_RESET_SECONDS}. reset_seconds = {detectionConfig.ResetSeconds}");
                             }
-                            else
+                            else if (hasLegacyConditions)
                             {
                                 if (response.Success)
                                 {
