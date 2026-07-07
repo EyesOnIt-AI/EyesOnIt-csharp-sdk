@@ -7,13 +7,13 @@ namespace EyesOnItSDK.API.Inputs
         [JsonPropertyName("schema_version")]
         public string SchemaVersion { get; set; } = EOIAddStreamInputs.CurrentSchemaVersion;
 
-        [JsonPropertyName("stream_url")]
-        public string StreamUrl { get; set; }
+        [JsonPropertyName("stream_id")]
+        public string StreamId { get; set; }
 
-        public EOIGetStreamDetailsInputs(string streamUrl)
+        public EOIGetStreamDetailsInputs(string streamId)
         {
             SchemaVersion = EOIAddStreamInputs.CurrentSchemaVersion;
-            StreamUrl = streamUrl;
+            StreamId = streamId;
         }
     }
 }

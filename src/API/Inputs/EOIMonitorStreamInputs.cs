@@ -4,15 +4,15 @@ using System.Text.Json.Serialization;
 namespace EyesOnItSDK.API.Inputs
 {
     public class EOIMonitorStreamInputs {
-        [JsonPropertyName("stream_url")]
-        public string StreamUrl { get; set; }
+        [JsonPropertyName("stream_id")]
+        public string StreamId { get; set; }
 
         [JsonPropertyName("duration_seconds")]
         public int? DurationSeconds { get; set; }
 
-        public EOIMonitorStreamInputs(string streamUrl, int? durationSeconds)
+        public EOIMonitorStreamInputs(string streamId, int? durationSeconds)
         {
-            StreamUrl = streamUrl;
+            StreamId = streamId;
             DurationSeconds = durationSeconds;
         }
 

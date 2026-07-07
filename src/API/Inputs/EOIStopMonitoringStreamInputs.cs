@@ -4,12 +4,12 @@ namespace EyesOnItSDK.API.Inputs
 {
     public class EOIStopMonitoringStreamInputs
     {
-        [JsonPropertyName("stream_url")]
-        public string StreamUrl { get; set; }
+        [JsonPropertyName("stream_id")]
+        public string StreamId { get; set; }
 
-        public EOIStopMonitoringStreamInputs(string streamUrl)
+        public EOIStopMonitoringStreamInputs(string streamId)
         {
-            StreamUrl = streamUrl;
+            StreamId = streamId;
         }
     }
 }

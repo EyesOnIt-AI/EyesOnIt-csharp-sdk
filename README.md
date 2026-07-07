@@ -97,7 +97,7 @@ EOIAddStreamResponse response = await eyesOnItSDK.AddStream(addStreamInputs);  /
 if (response.Success)
 {
     // Monitor the stream
-    await eyesOnItSDK.MonitorStream(addStreamInputs.StreamUrl, null);       // AddStream succeeded. Monitor the stream.
+    await eyesOnItSDK.MonitorStream(response.StreamId, null);               // AddStream succeeded. Monitor the stream by ID.
 }
 ```
 
@@ -108,4 +108,3 @@ The free interactive online demo is available [here](https://www.eyesonit.us/fre
 ## Questions
 
 Please email us at support@eyesonit.us if you have questions
-

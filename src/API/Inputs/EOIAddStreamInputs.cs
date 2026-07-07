@@ -14,6 +14,9 @@ namespace EyesOnItSDK.API.Inputs
         [JsonPropertyName("stream_url")]
         public string StreamUrl { get; set; }
 
+        [JsonPropertyName("stream_id")]
+        public string StreamId { get; set; }
+
         [JsonPropertyName("notification")]
         public EOINotification Notification { get; set; }
 

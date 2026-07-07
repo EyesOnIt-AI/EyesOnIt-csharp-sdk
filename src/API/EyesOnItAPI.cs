@@ -260,35 +260,38 @@ namespace EyesOnItSDK.API
             return eoiGetAllStreamsInfoResponse;
         }
 
-        public async Task<EOIGetStreamDetailsResponse> GetStreamDetails(string streamUrl)
+        public async Task<EOIGetStreamDetailsResponse> GetStreamDetails(string streamId)
         {
-            return await GetStreamDetails(new EOIGetStreamDetailsInputs(streamUrl));
+            return await GetStreamDetails(new EOIGetStreamDetailsInputs(streamId));
         }
 
         public async Task<EOIGetStreamDetailsResponse> GetStreamDetails(EOIGetStreamDetailsInputs inputs)
         {
-            EOIGetStreamDetailsResponse eoiGetStreamDetailsResponse;
+            EOIGetStreamDetailsResponse eoiGetStreamDetailsResponse = new EOIGetStreamDetailsResponse(EOIValidator.ValidateStreamId(inputs.StreamId));
 
-            string endPoint = $"{baseUrl}{getStreamDetailsPath}";
-
-            Log.Debug($"Calling {endPoint}");
-
-            try
+            if (eoiGetStreamDetailsResponse.Success)
             {
-                var options = new JsonSerializerOptions
+                string endPoint = $"{baseUrl}{getStreamDetailsPath}";
+
+                Log.Debug($"Calling {endPoint}");
+
+                try
                 {
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
 
-                var jsonData = JsonSerializer.Serialize(inputs, options);
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
 
-                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                eoiGetStreamDetailsResponse = new EOIGetStreamDetailsResponse(eoiMessage);
-            }
-            catch (HttpRequestException exc)
-            {
-                Log.Error($"GetStreamDetails: Exception: {exc.Message}");
-                eoiGetStreamDetailsResponse = new EOIGetStreamDetailsResponse(false, exc.Message);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    eoiGetStreamDetailsResponse = new EOIGetStreamDetailsResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"GetStreamDetails: Exception: {exc.Message}");
+                    eoiGetStreamDetailsResponse = new EOIGetStreamDetailsResponse(false, exc.Message);
+                }
             }
 
             return eoiGetStreamDetailsResponse;
@@ -497,77 +500,83 @@ namespace EyesOnItSDK.API
             return getVideoStatusResponse;
         }
 
-        public async Task<EOIMonitorStreamResponse> MonitorStream(string streamUrl, int? durationSeconds)
+        public async Task<EOIMonitorStreamResponse> MonitorStream(string streamId, int? durationSeconds)
         {
-            return await this.MonitorStream(new EOIMonitorStreamInputs(streamUrl, durationSeconds));
+            return await this.MonitorStream(new EOIMonitorStreamInputs(streamId, durationSeconds));
         }
 
         public async Task<EOIMonitorStreamResponse> MonitorStream(EOIMonitorStreamInputs inputs)
         {
-            EOIMonitorStreamResponse eoiMonitorStreamResponse;
+            EOIMonitorStreamResponse eoiMonitorStreamResponse = new EOIMonitorStreamResponse(EOIValidator.ValidateStreamId(inputs.StreamId));
 
-            string endPoint = $"{baseUrl}{monitorStreamPath}";
-
-            Log.Debug($"Calling {endPoint}");
-
-            try
+            if (eoiMonitorStreamResponse.Success)
             {
-                var options = new JsonSerializerOptions
+                string endPoint = $"{baseUrl}{monitorStreamPath}";
+
+                Log.Debug($"Calling {endPoint}");
+
+                try
                 {
-                    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-                };
+                    var options = new JsonSerializerOptions
+                    {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+                    };
 
-                var jsonData = JsonSerializer.Serialize(inputs, options);
+                    var jsonData = JsonSerializer.Serialize(inputs, options);
 
-                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                eoiMonitorStreamResponse = new EOIMonitorStreamResponse(eoiMessage);
-            }
-            catch (HttpRequestException exc)
-            {
-                Log.Error($"MonitorStream: Exception: {exc.Message}");
-                eoiMonitorStreamResponse = new EOIMonitorStreamResponse(false, exc.Message);
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    eoiMonitorStreamResponse = new EOIMonitorStreamResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"MonitorStream: Exception: {exc.Message}");
+                    eoiMonitorStreamResponse = new EOIMonitorStreamResponse(false, exc.Message);
+                }
             }
 
             return eoiMonitorStreamResponse;
         }
 
-        public async Task<EOIStopMonitoringStreamResponse> StopMonitoringStream(string streamUrl)
+        public async Task<EOIStopMonitoringStreamResponse> StopMonitoringStream(string streamId)
         {
-            return await this.StopMonitoringStream(new EOIStopMonitoringStreamInputs(streamUrl));
+            return await this.StopMonitoringStream(new EOIStopMonitoringStreamInputs(streamId));
         }
 
         public async Task<EOIStopMonitoringStreamResponse> StopMonitoringStream(EOIStopMonitoringStreamInputs inputs)
         {
-            EOIStopMonitoringStreamResponse eoiStopMonitoringResponse;
+            EOIStopMonitoringStreamResponse eoiStopMonitoringResponse = new EOIStopMonitoringStreamResponse(EOIValidator.ValidateStreamId(inputs.StreamId));
 
-            string endPoint = $"{baseUrl}{stopMonitorStreamPath}";
-
-            Log.Debug($"Calling {endPoint}");
-
-            try
+            if (eoiStopMonitoringResponse.Success)
             {
-                var jsonData = JsonSerializer.Serialize(inputs);
+                string endPoint = $"{baseUrl}{stopMonitorStreamPath}";
 
-                EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
-                eoiStopMonitoringResponse = new EOIStopMonitoringStreamResponse(eoiMessage);
-            }
-            catch (HttpRequestException exc)
-            {
-                Log.Error($"StopMonitoringStream: Exception: {exc.Message}");
-                eoiStopMonitoringResponse = new EOIStopMonitoringStreamResponse(false, exc.Message);
+                Log.Debug($"Calling {endPoint}");
+
+                try
+                {
+                    var jsonData = JsonSerializer.Serialize(inputs);
+
+                    EOIMessage eoiMessage = await PostAsync(endPoint, jsonData);
+                    eoiStopMonitoringResponse = new EOIStopMonitoringStreamResponse(eoiMessage);
+                }
+                catch (HttpRequestException exc)
+                {
+                    Log.Error($"StopMonitoringStream: Exception: {exc.Message}");
+                    eoiStopMonitoringResponse = new EOIStopMonitoringStreamResponse(false, exc.Message);
+                }
             }
 
             return eoiStopMonitoringResponse;
         }
 
-        public async Task<EOIGetVideoFrameResponse> GetVideoFrame(string streamUrl)
+        public async Task<EOIGetVideoFrameResponse> GetVideoFrame(string streamId)
         {
-            return await this.GetVideoFrame(new EOIVideoFrameInputs(streamUrl));
+            return await this.GetVideoFrame(new EOIVideoFrameInputs(streamId));
         }
 
         public async Task<EOIGetVideoFrameResponse> GetVideoFrame(EOIVideoFrameInputs inputs)
         {
-            EOIGetVideoFrameResponse getVideoFrameResponse = new EOIGetVideoFrameResponse(EOIValidator.ValidateStreamUrl(inputs.StreamUrl));
+            EOIGetVideoFrameResponse getVideoFrameResponse = new EOIGetVideoFrameResponse(EOIValidator.ValidateStreamId(inputs.StreamId));
 
             if (getVideoFrameResponse.Success)
             {
@@ -591,14 +600,14 @@ namespace EyesOnItSDK.API
             return getVideoFrameResponse;
         }
 
-        public async Task<EOIGetLastDetectionInfoResponse> GetLastDetectionInfo(string streamUrl)
+        public async Task<EOIGetLastDetectionInfoResponse> GetLastDetectionInfo(string streamId)
         {
-            return await this.GetLastDetectionInfo(new EOIGetLastDetectionInfoInputs(streamUrl));
+            return await this.GetLastDetectionInfo(new EOIGetLastDetectionInfoInputs(streamId));
         }
 
         public async Task<EOIGetLastDetectionInfoResponse> GetLastDetectionInfo(EOIGetLastDetectionInfoInputs inputs)
         {
-            EOIGetLastDetectionInfoResponse getLastDetectionInfoResponse = new EOIGetLastDetectionInfoResponse(EOIValidator.ValidateStreamUrl(inputs.StreamUrl));
+            EOIGetLastDetectionInfoResponse getLastDetectionInfoResponse = new EOIGetLastDetectionInfoResponse(EOIValidator.ValidateStreamId(inputs.StreamId));
 
             if (getLastDetectionInfoResponse.Success)
             {
@@ -622,14 +631,14 @@ namespace EyesOnItSDK.API
             return getLastDetectionInfoResponse;
         }
 
-        public async Task<EOIRemoveStreamResponse> RemoveStream(string streamUrl)
+        public async Task<EOIRemoveStreamResponse> RemoveStream(string streamId)
         {
-            return await this.RemoveStream(new EOIRemoveStreamInputs(streamUrl));
+            return await this.RemoveStream(new EOIRemoveStreamInputs(streamId));
         }
 
         public async Task<EOIRemoveStreamResponse> RemoveStream(EOIRemoveStreamInputs inputs)
         {
-            EOIRemoveStreamResponse removeStreamResponse = new EOIRemoveStreamResponse(EOIValidator.ValidateStreamUrl(inputs.StreamUrl));
+            EOIRemoveStreamResponse removeStreamResponse = new EOIRemoveStreamResponse(EOIValidator.ValidateStreamId(inputs.StreamId));
 
             if (removeStreamResponse.Success)
             {

@@ -5,12 +5,12 @@ namespace EyesOnItSDK.API.Inputs
 {
     public class EOIVideoFrameInputs
     {
-        [JsonPropertyName("stream_url")]
-        public string StreamUrl { get; set; }
+        [JsonPropertyName("stream_id")]
+        public string StreamId { get; set; }
 
-        public EOIVideoFrameInputs(string streamUrl)
+        public EOIVideoFrameInputs(string streamId)
         {
-            StreamUrl = streamUrl;
+            StreamId = streamId;
         }
     }
 }

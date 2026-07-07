@@ -24,6 +24,9 @@ namespace EyesOnItSDK.API.Elements
         [JsonPropertyName("stream_url")]
         public string Stream { get; set; }
 
+        [JsonPropertyName("stream_id")]
+        public string StreamId { get; set; }
+
         [JsonPropertyName("stream_name")]
         public string StreamName { get; set; }
 

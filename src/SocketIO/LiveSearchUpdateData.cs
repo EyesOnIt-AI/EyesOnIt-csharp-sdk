@@ -52,6 +52,9 @@ namespace EyesOnItSDK.SocketIO
         [JsonPropertyName("alert_threshold")]
         public int? AlertThreshold { get; set; }
 
+        [JsonPropertyName("stream_ids")]
+        public string[] StreamIds { get; set; }
+
         [JsonPropertyName("track_alert_cooldown_seconds")]
         public double? TrackAlertCooldownSeconds { get; set; }
 

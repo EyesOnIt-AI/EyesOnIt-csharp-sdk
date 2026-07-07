@@ -85,6 +85,11 @@ namespace EyesOnItSDK.API
                     response = ValidateStreamUrl(inputs.StreamUrl);
                 }
 
+                if (response.Success && !string.IsNullOrWhiteSpace(inputs.StreamId))
+                {
+                    response = ValidateStreamId(inputs.StreamId);
+                }
+
                 if (response.Success)
                 {
                     string name = inputs.Name == null ? "" : inputs.Name.Trim();
@@ -931,6 +936,15 @@ namespace EyesOnItSDK.API
             return trimmedUrl != null && trimmedUrl.Length > 0 ?
                 EOIResponse.DefaultSuccess()
                 : new EOIResponse(false, "The stream url must be a valid RTSP URL");
+        }
+
+        public static EOIResponse ValidateStreamId(string streamId)
+        {
+            var trimmedStreamId = streamId == null ? null : streamId.Trim();
+
+            return trimmedStreamId != null && trimmedStreamId.Length > 0 ?
+                EOIResponse.DefaultSuccess()
+                : new EOIResponse(false, "The stream id must not be null or empty");
         }
 
         public static EOIResponse ValidateFrameRate(int? frameRate)

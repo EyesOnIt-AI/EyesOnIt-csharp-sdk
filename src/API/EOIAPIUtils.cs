@@ -21,13 +21,13 @@ namespace EyesOnItSDK.API
         }
 
 
-        public static EOIStreamInfo GetInfoForStream(List<EOIStreamInfo> streamInfoList, string streamUrl)
+        public static EOIStreamInfo GetInfoForStream(List<EOIStreamInfo> streamInfoList, string streamId)
         {
             EOIStreamInfo requestedStreamInfo = null;
 
             if (streamInfoList != null && streamInfoList.Count > 0)
             {
-                requestedStreamInfo = streamInfoList.Where(si => si.StreamUrl == streamUrl).SingleOrDefault();
+                requestedStreamInfo = streamInfoList.Where(si => si.StreamId == streamId).SingleOrDefault();
             }
 
             return requestedStreamInfo;

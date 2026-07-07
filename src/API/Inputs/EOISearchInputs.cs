@@ -30,8 +30,8 @@ namespace EyesOnItSDK.API.Inputs
         [JsonPropertyName("alert_threshold")]
         public int? AlertThreshold { get; set; }
 
-        [JsonPropertyName("stream_list")]
-        public string[] StreamList { get; set; }
+        [JsonPropertyName("stream_ids")]
+        public string[] StreamIds { get; set; }
 
         public EOISearchInputs()
         {
@@ -45,7 +45,7 @@ namespace EyesOnItSDK.API.Inputs
             string facePersonId,
             string faceGroupId,
             int? threshold,
-            string[] streamList)
+            string[] streamIds)
         {
             ClassName = className;
             SearchType = searchType;
@@ -55,7 +55,7 @@ namespace EyesOnItSDK.API.Inputs
             FacePersonId = facePersonId;
             FaceGroupId = faceGroupId;
             AlertThreshold = threshold;
-            StreamList = streamList;
+            StreamIds = streamIds;
         }
     }
 }
