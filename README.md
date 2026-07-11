@@ -6,12 +6,19 @@
 
 To get a free developer license and download EyesOnIt, refer to the EyesOnIt User Guide [here](https://developer.eyesonit.us/documentation).
 
+## Startup model optimization
+
+Version 5.0.0 adds `GetModelOptimizationStatus()` and `RetryModelOptimization()`.
+Fetch one initial status, then use `SocketClient.OnModelOptimizationStatus` for
+state changes; only the `ready` state permits processing, stream creation,
+search, or face-recognition operations.
+
 ## Adding the SDK Package
 
 To add the SDK package to your project:
 
 ```
-dotnet add package eyesonit.csharp.sdk --version 3.0.3
+dotnet add package eyesonit.csharp.sdk --version 5.0.0
 ```
 
 More details about the the SDK package are [here](https://www.nuget.org/packages/eyesonit.csharp.sdk).

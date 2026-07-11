@@ -11,6 +11,12 @@ namespace EyesOnItSDK.API.Outputs
 
         [JsonPropertyName("display_name")]
         public string DisplayName { get; set; }
+
+        [JsonPropertyName("remote_managed")]
+        public bool RemoteManaged { get; set; }
+
+        [JsonPropertyName("managed_by")]
+        public string ManagedBy { get; set; }
     }
 
     public class EOISearchFacerecNamesResponse : EOIBaseOutputs

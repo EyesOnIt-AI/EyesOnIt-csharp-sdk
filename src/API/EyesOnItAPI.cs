@@ -42,6 +42,7 @@ namespace EyesOnItSDK.API
         private readonly string cancelLiveSearchPath = "/cancel_live_search";
         private readonly string getConfigPath = "/get_config";
         private readonly string updateConfigPath = "/update_config";
+        private readonly string remoteManagementStatusPath = "/remote_management/status";
         private readonly string facerecGroupsPath = "/facerec_groups";
         private readonly string facerecSearchGroupNamesPath = "/facerec_search_group_names";
         private readonly string facerecSearchPeopleNamesPath = "/facerec_search_people_names";
@@ -56,6 +57,8 @@ namespace EyesOnItSDK.API
         private readonly string isLicenseValidPath = "/is_license_valid";
         private readonly string getLicenseStatusPath = "/get_license_status";
         private readonly string validateLicensePath = "/validate_license";
+        private readonly string modelOptimizationStatusPath = "/model_optimization_status";
+        private readonly string retryModelOptimizationPath = "/model_optimization/retry";
 
         public EyesOnItAPI(string baseUrl)
         {
@@ -203,6 +206,38 @@ namespace EyesOnItSDK.API
             }
 
             return validateLicenseResponse;
+        }
+
+        /// <summary>Gets startup TensorRT model optimization progress.</summary>
+        public async Task<EOIModelOptimizationStatusResponse> GetModelOptimizationStatus()
+        {
+            string endPoint = $"{baseUrl}{modelOptimizationStatusPath}";
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint, logResponse: false);
+                return new EOIModelOptimizationStatusResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"GetModelOptimizationStatus: Exception: {exc.Message}");
+                return new EOIModelOptimizationStatusResponse(false, exc.Message);
+            }
+        }
+
+        /// <summary>Retries a terminal startup model optimization failure.</summary>
+        public async Task<EOIModelOptimizationStatusResponse> RetryModelOptimization()
+        {
+            string endPoint = $"{baseUrl}{retryModelOptimizationPath}";
+            try
+            {
+                EOIMessage eoiMessage = await PostAsync(endPoint, "{}", logPayload: false, logResponse: false);
+                return new EOIModelOptimizationStatusResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"RetryModelOptimization: Exception: {exc.Message}");
+                return new EOIModelOptimizationStatusResponse(false, exc.Message);
+            }
         }
 
         public async Task<EOIProcessImageResponse> ProcessImage(EOIProcessImageInputs inputs)
@@ -859,6 +894,28 @@ namespace EyesOnItSDK.API
             }
 
             return updateConfigResponse;
+        }
+
+        public async Task<EOIRemoteManagementStatusResponse> GetRemoteManagementStatus()
+        {
+            EOIRemoteManagementStatusResponse statusResponse;
+
+            string endPoint = $"{baseUrl}{remoteManagementStatusPath}";
+
+            Log.Debug($"Calling {endPoint}");
+
+            try
+            {
+                EOIMessage eoiMessage = await GetAsync(endPoint);
+                statusResponse = new EOIRemoteManagementStatusResponse(eoiMessage);
+            }
+            catch (HttpRequestException exc)
+            {
+                Log.Error($"GetRemoteManagementStatus: Exception: {exc.Message}");
+                statusResponse = new EOIRemoteManagementStatusResponse(false, exc.Message);
+            }
+
+            return statusResponse;
         }
 
         public async Task<EOIGetFacerecGroupsResponse> GetFacerecGroups()

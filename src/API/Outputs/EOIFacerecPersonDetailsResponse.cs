@@ -12,6 +12,15 @@ namespace EyesOnItSDK.API.Outputs
         [JsonPropertyName("display_name")]
         public string DisplayName { get; set; }
 
+        [JsonPropertyName("description")]
+        public string Description { get; set; }
+
+        [JsonPropertyName("remote_managed")]
+        public bool RemoteManaged { get; set; }
+
+        [JsonPropertyName("managed_by")]
+        public string ManagedBy { get; set; }
+
         public EOIFacerecGroup()
         {
         }
@@ -48,6 +57,8 @@ namespace EyesOnItSDK.API.Outputs
         public string PersonName { get; set; }
         public List<EOIFacerecGroup> Groups { get; set; }
         public List<EOIFacerecImage> Images { get; set; }
+        public bool RemoteManaged { get; set; }
+        public string ManagedBy { get; set; }
 
         internal EOIFacerecPersonDetailsResponse(EOIMessage eoiMessage) : base(eoiMessage)
         {
@@ -63,6 +74,16 @@ namespace EyesOnItSDK.API.Outputs
                 if (dataElement.TryGetProperty("person_name", out JsonElement personNameElement))
                 {
                     PersonName = JsonSerializer.Deserialize<string>(personNameElement.GetRawText());
+                }
+
+                if (dataElement.TryGetProperty("remote_managed", out JsonElement remoteManagedElement))
+                {
+                    RemoteManaged = remoteManagedElement.ValueKind == JsonValueKind.True;
+                }
+
+                if (dataElement.TryGetProperty("managed_by", out JsonElement managedByElement))
+                {
+                    ManagedBy = JsonSerializer.Deserialize<string>(managedByElement.GetRawText());
                 }
 
                 if (dataElement.TryGetProperty("groups", out JsonElement groupsElement))

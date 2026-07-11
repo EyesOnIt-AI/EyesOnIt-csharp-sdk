@@ -31,6 +31,7 @@ namespace EyesOnItSDK.SocketIO
         public delegate void SubscribedHandler(SubscribedData payload);
         public delegate void UnsubscribedHandler(SubscribedData payload);
         public delegate void SubscriptionErrorHandler(SubscriptionErrorData payload);
+        public delegate void ModelOptimizationStatusHandler(ModelOptimizationStatusData payload);
         public delegate void ConnectedHandler();
         public delegate void DisconnectedHandler(string reason);
         public delegate void ReconnectedHandler(int attempts);
@@ -46,6 +47,7 @@ namespace EyesOnItSDK.SocketIO
         public event SubscribedHandler OnSubscribed;
         public event UnsubscribedHandler OnUnsubscribed;
         public event SubscriptionErrorHandler OnSubscriptionError;
+        public event ModelOptimizationStatusHandler OnModelOptimizationStatus;
         public event ConnectedHandler OnConnected;
         public event DisconnectedHandler OnDisconnected;
         public event ReconnectedHandler OnReconnected;
@@ -521,6 +523,19 @@ namespace EyesOnItSDK.SocketIO
                 catch (Exception ex)
                 {
                     Log.Error(ex, "SocketIOClient: Failed to handle subscription_error");
+                }
+            });
+
+            socket.On("model_optimization_status", response =>
+            {
+                try
+                {
+                    Log.Debug("SocketIOClient: model_optimization_status message received");
+                    OnModelOptimizationStatus?.Invoke(response.GetValue<ModelOptimizationStatusData>(0));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "SocketIOClient: Failed to handle model_optimization_status");
                 }
             });
         }

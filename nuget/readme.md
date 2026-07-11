@@ -6,12 +6,19 @@
 
 To get a free developer license and download EyesOnIt, refer to the EyesOnIt User Guide [here](https://developer.eyesonit.us/documentation).
 
+## Startup model optimization
+
+Use `GetModelOptimizationStatus()` once to display startup TensorRT progress,
+then subscribe to `SocketClient.OnModelOptimizationStatus` for state changes.
+Wait for `ready` before issuing model-backed requests. `RetryModelOptimization()`
+is available after a terminal optimization failure.
+
 ## Adding the SDK Package
 
 To add the SDK package to your project:
 
 ```
-dotnet add package eyesonit.csharp.sdk --version 4.0.0
+dotnet add package eyesonit.csharp.sdk --version 5.0.0
 ```
 
 More details about the the SDK package are [here](https://www.nuget.org/packages/eyesonit.csharp.sdk).
